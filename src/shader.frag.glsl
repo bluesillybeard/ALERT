@@ -10,6 +10,11 @@ layout(std430, binding = 1) buffer tiles {
     uint line_ids[];
 };
 
+layout(std430, binding = 2) buffer tile_indices {
+    // This is a list with a length equal to the number of tiles, each item is the index into tiles where that tile starts.
+    uint tile_index_buffer[];
+};
+
 layout(location = 0) uniform uint num_lines;
 layout(location = 1) uniform uint num_x_tiles;
 layout(location = 2) uniform uint num_y_tiles;
@@ -24,15 +29,16 @@ struct line {
 };
 
 uint calculate_tile_index(vec2 pixel_pos) {
-    return uint(pixel_pos.x) / 32 + num_x_tiles * (uint(pixel_pos.y) / 32);
+    uint tid = uint(pixel_pos.x) / 32 + num_x_tiles * (uint(pixel_pos.y) / 32);
+    return tile_index_buffer[tid];
 }
 
 uint tile_num_lines(uint tile_index) {
-    return line_ids[tile_index * (num_lines + 1)];
+    return line_ids[tile_index];
 }
 
 uint tile_line_id(uint tile_index, uint index) {
-    return line_ids[tile_index * (num_lines + 1) + index + 1];
+    return line_ids[tile_index + index + 1];
 }
 
 line extract_line(uint line_id) {

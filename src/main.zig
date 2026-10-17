@@ -199,10 +199,12 @@ pub fn main(init: std.process.Init) !void {
     // I am furiously considering switching to OpenGL 4.5 or newer with their MUCH MUCH MUCH nicer named buffer API, but I want compatibility if possible.
     gl.bufferData(gl.SHADER_STORAGE_BUFFER, @sizeOf(GpuLinesBufferStruct), null, gl.DYNAMIC_DRAW);
 
+    // unfortunately unlike the lines buffer, the size of the tiles buffer may change each frame so we cannot pre-allocate (sad)
     var tiles_buffer: gl.Uint = 0;
     gl.genBuffers(1, &tiles_buffer);
-    gl.bindBuffer(gl.SHADER_STORAGE_BUFFER, tiles_buffer);
-    // unfortunately unlike the lines buffer, the size of the tiles buffer may change each frame so we cannot pre-allocate (sad)
+
+    var tile_indices_buffer: gl.Uint = 0;
+    gl.genBuffers(1, &tile_indices_buffer);
 
     // Apparently I still need a VAO despite not using any vertex buffer of any sort
     // Seriously, OpenGL, I am literally creating an empty VAO for no reason
@@ -256,27 +258,37 @@ pub fn main(init: std.process.Init) !void {
         const num_x_tiles: u32 = @intCast(@divTrunc(window_size[0] - 1, TILE_SIZE) + 1);
         const num_y_tiles: u32 = @intCast(@divTrunc(window_size[1] - 1, TILE_SIZE) + 1);
         const num_total_tiles = num_x_tiles * num_y_tiles;
-        const tiles = try frame_arena.alloc(GpuTile, num_total_tiles);
-        @memset(tiles, .{});
 
         // Go through each tile and make a list of the lines that touch it.
-        for (tiles, 0..) |*tile, tile_index| {
+        const tile_indices = try frame_arena.alloc(u32, num_total_tiles);
+        var tile_data = try std.ArrayList(u32).initCapacity(frame_arena, num_total_tiles * (MAX_LINES + 1));
+        for (0..num_total_tiles) |tile_index| {
             const tile_x = tile_index % num_x_tiles;
             const tile_y = tile_index / num_x_tiles;
             const tile_pixel_x = @as(f32, @floatFromInt(tile_x)) * @as(f32, @floatFromInt(TILE_SIZE)) + @as(f32, @floatFromInt(TILE_SIZE)) / 2.0;
             const tile_pixel_y = @as(f32, @floatFromInt(tile_y)) * @as(f32, @floatFromInt(TILE_SIZE)) + @as(f32, @floatFromInt(TILE_SIZE)) / 2.0;
 
+            const start_index = tile_data.items.len;
+            // Allocate the space for the #of lines in this tile
+            tile_data.appendAssumeCapacity(0);
+            var tile_num_lines: u32 = 0;
             for (0..MAX_LINES) |line_index| {
                 const line = lines[line_index];
                 const distance_to_tile = line_segment_distance(&line, tile_pixel_x, tile_pixel_y);
                 if (distance_to_tile < TILE_MARGIN + @as(f32, @floatFromInt(line.width)) / 2.0) {
-                    tile.lines[tile.num_lines] = @intCast(line_index);
-                    tile.num_lines += 1;
+                    tile_data.appendAssumeCapacity(@intCast(line_index));
+                    tile_num_lines += 1;
                 }
             }
+            tile_data.items[start_index] = tile_num_lines;
+            tile_indices[tile_index] = @intCast(start_index);
         }
+
+        gl.bindBuffer(gl.SHADER_STORAGE_BUFFER, tile_indices_buffer);
+        gl.bufferData(gl.SHADER_STORAGE_BUFFER, @intCast(tile_indices.len * @sizeOf(u32)), tile_indices.ptr, gl.DYNAMIC_DRAW);
+
         gl.bindBuffer(gl.SHADER_STORAGE_BUFFER, tiles_buffer);
-        gl.bufferData(gl.SHADER_STORAGE_BUFFER, num_total_tiles * @sizeOf(GpuTile), tiles.ptr, gl.DYNAMIC_DRAW);
+        gl.bufferData(gl.SHADER_STORAGE_BUFFER, @intCast(tile_data.items.len * @sizeOf(u32)), tile_data.items.ptr, gl.DYNAMIC_DRAW);
 
         // Draw
         gl.clear(gl.COLOR_BUFFER_BIT);
@@ -287,10 +299,14 @@ pub fn main(init: std.process.Init) !void {
         const tiles_buffer_resource_index = gl.getProgramResourceIndex(program_id, gl.SHADER_STORAGE_BLOCK, "tiles");
         gl.shaderStorageBlockBinding(program_id, tiles_buffer_resource_index, 1);
 
+        const tile_indices_buffer_resource_index = gl.getProgramResourceIndex(program_id, gl.SHADER_STORAGE_BLOCK, "tile_indices");
+        gl.shaderStorageBlockBinding(program_id, tile_indices_buffer_resource_index, 2);
+
         gl.useProgram(program_id);
         gl.bindVertexArray(vao_id);
         gl.bindBufferBase(gl.SHADER_STORAGE_BUFFER, 0, lines_buffer);
         gl.bindBufferBase(gl.SHADER_STORAGE_BUFFER, 1, tiles_buffer);
+        gl.bindBufferBase(gl.SHADER_STORAGE_BUFFER, 2, tile_indices_buffer);
         gl.uniform1ui(0, @intCast(lines.len));
         gl.uniform1ui(1, @intCast(num_x_tiles));
         gl.uniform1ui(2, @intCast(num_y_tiles));
