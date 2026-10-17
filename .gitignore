@@ -1,0 +1,5 @@
+# apitrace is my best friend but it tends to leave crap
+thetrace
+zig-out
+zig-pkg
+.zig-cache

@@ -1,0 +1,6 @@
+# Advanced Line Effect Rendering Technology
+
+So basically this is a scuffed line renderer (despite the fact that I have literally called it advanced lol) with some kind of game attached to it.
+
+I started it for the 2026 Mines game dev club october game jam. 
+
