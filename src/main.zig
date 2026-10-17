@@ -68,7 +68,7 @@ const GpuTile = extern struct {
 };
 
 // This is a one-to-one translation of the function found in the fragment shader to find line distance
-fn line_segment_distance(line: *const CPULine, x: f32, y: f32) f32 {
+fn line_segment_distance_square(line: *const CPULine, x: f32, y: f32) f32 {
     const lx0: f32 = @floatFromInt(line.x0);
     const ly0: f32 = @floatFromInt(line.y0);
     const lx1: f32 = @floatFromInt(line.x1);
@@ -80,7 +80,7 @@ fn line_segment_distance(line: *const CPULine, x: f32, y: f32) f32 {
     if (ux == 0 and uy == 0) {
         const dx = x - lx1;
         const dy = y - ly1;
-        return @sqrt(dx * dx + dy * dy);
+        return dx * dx + dy * dy;
     }
 
     const vx = x - lx0;
@@ -91,17 +91,17 @@ fn line_segment_distance(line: *const CPULine, x: f32, y: f32) f32 {
     if (t < 0) {
         const dx = x - lx0;
         const dy = y - ly0;
-        return @sqrt(dx * dx + dy * dy);
+        return dx * dx + dy * dy;
     } else if (t > 1) {
         const dx = x - lx1;
         const dy = y - ly1;
-        return @sqrt(dx * dx + dy * dy);
+        return dx * dx + dy * dy;
     } else {
         const zx = lx0 + t * ux;
         const zy = ly0 + t * uy;
         const dx = x - zx;
         const dy = y - zy;
-        return @sqrt(dx * dx + dy * dy);
+        return dx * dx + dy * dy;
     }
 }
 
@@ -276,8 +276,9 @@ pub fn main(init: std.process.Init) !void {
             var tile_num_lines: u32 = 0;
             for (0..MAX_LINES) |line_index| {
                 const line = lines[line_index];
-                const distance_to_tile = line_segment_distance(&line, tile_pixel_x, tile_pixel_y);
-                if (distance_to_tile < TILE_MARGIN + @as(f32, @floatFromInt(line.width)) / 2.0) {
+                const distance_to_tile = line_segment_distance_square(&line, tile_pixel_x, tile_pixel_y);
+                const compare_to = TILE_MARGIN + @as(f32, @floatFromInt(line.width)) / 2.0;
+                if (distance_to_tile < compare_to * compare_to) {
                     tile_data.appendAssumeCapacity(@intCast(line_index));
                     tile_num_lines += 1;
                 }
