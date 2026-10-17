@@ -4,7 +4,15 @@ layout(std430, binding = 0) buffer lines {
     uint line_data[];
 };
 
+layout(std430, binding = 1) buffer tiles {
+    // Each tile has a single uint for the number of lines in that tile, then num_lines more uints each a tile ID for a line.
+    // I will admit, this is an obnoxious over-allocation of GPU memory, but lines are cheap as.
+    uint line_ids[];
+};
+
 layout(location = 0) uniform uint num_lines;
+layout(location = 1) uniform uint num_x_tiles;
+layout(location = 2) uniform uint num_y_tiles;
 
 out vec4 color;
 
@@ -14,6 +22,18 @@ struct line {
     vec2 p1;
     float width;
 };
+
+uint calculate_tile_index(vec2 pixel_pos) {
+    return uint(pixel_pos.x) / num_x_tiles + num_lines * uint(pixel_pos.y) / num_y_tiles;
+}
+
+uint tile_num_lines(uint tile_index) {
+    return line_ids[tile_index * (num_lines + 1)]
+}
+
+uint tile_line_id(uint tile_index, uint index) {
+    return line_ids[tile_index * (num_lines + 1) + index + 1]
+}
 
 line extract_line(uint line_id) {
     uint d0 = line_data[line_id * 4];
@@ -69,10 +89,18 @@ void main() {
     color = vec4(0, 0, 0, 1);
 
     vec2 pixel_pos = gl_FragCoord.xy;
-    for(uint id=0; id < num_lines; id += 1) {
+    uint tile = calculate_tile_index(pixel_pos)
+    uint num = tile_num_lines(tile)
+
+    for(uint index = 0; index < num; index += 1) {
+        uint id = tile_line_id(tile, index);
         line line_data = extract_line(id);
         float dist = line_segment_distance(line_data.p0, line_data.p1, pixel_pos);
         float diff = dist - line_data.width;
+        // This improved marginally at best
+        if (diff > 1) {
+            continue;
+        }
         color += mix(determine_line_color(line_data, dist), vec4(0), max(min(diff, 1), 0));
     }
 }

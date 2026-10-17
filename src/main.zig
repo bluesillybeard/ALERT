@@ -6,7 +6,10 @@ const opengl = @import("opengl");
 
 // TODO: perhaps put this in some kind of config?
 // To be honest though, for this game I see no need to change it at runtime.
-const MAX_LINES = 10;
+const MAX_LINES = 10000;
+
+// The spatial partitioning tiles are NxN pixels in size
+const TILE_SIZE = 32;
 
 const CPULine = struct {
     color: [4]u8,
@@ -52,8 +55,13 @@ const GPULine = packed struct(u128) {
 };
 
 // This is what ends up in the SSBO
-const GpuSsboStruct = extern struct {
+const GpuLinesBufferStruct = extern struct {
     lines: [MAX_LINES]GPULine,
+};
+
+const GpuTile = packed struct {
+    num_tiles: u32,
+    lines: [MAX_LINES]u32,
 };
 
 // First version with SSBOs, so I can just excrete the line data into a buffer that the pixel shader refines
@@ -143,12 +151,17 @@ pub fn main(init: std.process.Init) !void {
     gl.deleteShader(fragment_shader_id);
 
     // Make sure there is enough SSBO space to put all the lines
-    var ssbo_id: gl.Uint = 0;
-    gl.genBuffers(1, &ssbo_id);
-    gl.bindBuffer(gl.SHADER_STORAGE_BUFFER, ssbo_id);
+    var lines_buffer: gl.Uint = 0;
+    gl.genBuffers(1, &lines_buffer);
+    gl.bindBuffer(gl.SHADER_STORAGE_BUFFER, lines_buffer);
     // ask OpenGL to allocate the bytes we need but don't set them to anything yet
     // I am furiously considering switching to OpenGL 4.5 or newer with their MUCH MUCH MUCH nicer named buffer API, but I want compatibility if possible.
-    gl.bufferData(gl.SHADER_STORAGE_BUFFER, @sizeOf(GpuSsboStruct), null, gl.DYNAMIC_DRAW);
+    gl.bufferData(gl.SHADER_STORAGE_BUFFER, @sizeOf(GpuLinesBufferStruct), null, gl.DYNAMIC_DRAW);
+
+    var tiles_buffer: gl.Uint = 0;
+    gl.genBuffers(1, &tiles_buffer);
+    gl.bindBuffer(gl.SHADER_STORAGE_BUFFER, tiles_buffer);
+    // unfortunately unlike the lines buffer, the size of the tiles buffer may change each frame so we cannot pre-allocate (sad)
 
     // Apparently I still need a VAO despite not using any vertex buffer of any sort
     // Seriously, OpenGL, I am literally creating an empty VAO for no reason
@@ -176,11 +189,14 @@ pub fn main(init: std.process.Init) !void {
         };
     }
 
-    std.log.debug("{any}", .{lines});
+    const gpu_lines = try init.arena.allocator().create(GpuLinesBufferStruct);
 
-    const gpu_lines = try init.arena.allocator().create(GpuSsboStruct);
+    var frame_arena_obj = std.heap.ArenaAllocator.init(init.gpa);
+    const frame_arena = frame_arena_obj.allocator();
 
     while (!window.shouldClose()) {
+        frame_arena_obj.reset(.retain_capacity);
+
         glfw.pollEvents();
 
         const window_size = window.getSize();
@@ -190,18 +206,39 @@ pub fn main(init: std.process.Init) !void {
             gpu_lines.lines[i] = lines[i].toGpu();
         }
 
-        gl.bindBuffer(gl.SHADER_STORAGE_BUFFER, ssbo_id);
-        gl.bufferSubData(gl.SHADER_STORAGE_BUFFER, 0, @sizeOf(GpuSsboStruct), gpu_lines);
+        // Upload new lines
+        gl.bindBuffer(gl.SHADER_STORAGE_BUFFER, lines_buffer);
+        gl.bufferSubData(gl.SHADER_STORAGE_BUFFER, 0, @sizeOf(GpuLinesBufferStruct), gpu_lines);
+
+        // Update tile buffer
+        const num_x_tiles: u32 = (window_size[0] - 1) / TILE_SIZE + 1;
+        const num_y_tiles: u32 = (window_size[1] - 1) / TILE_SIZE + 1;
+        const num_total_tiles = num_x_tiles * num_y_tiles;
+        const tiles = try frame_arena.alloc(GpuTile, num_total_tiles);
+
+        // For now, um, idk just say every tile has every line xd
+        // TODO: actually make this "optimization" be an actual optimization
+        for (tiles) |*tile| {
+            for (MAX_LINES) |i| {
+                tile.lines[i] = i;
+            }
+        }
+        gl.bindBuffer(gl.SHADER_STORAGE_BUFFER, tiles_buffer);
+        gl.bufferData(gl.SHADER_STORAGE_BUFFER, num_total_tiles * @sizeOf(GpuTile), tiles.ptr, gl.DYNAMIC_DRAW);
+
+        // Draw
         gl.clear(gl.COLOR_BUFFER_BIT);
 
-        // Gosh I hate OpenGL what kind of loser dumbass idiots designed this stupid heaping pile of actual BS like what in the world
-        const resource_index = gl.getProgramResourceIndex(program_id, gl.SHADER_STORAGE_BLOCK, "lines");
-        gl.shaderStorageBlockBinding(program_id, resource_index, 0);
+        const lines_buffer_resource_index = gl.getProgramResourceIndex(program_id, gl.SHADER_STORAGE_BLOCK, "lines");
+        gl.shaderStorageBlockBinding(program_id, lines_buffer_resource_index, 0);
+
+        const tiles_buffer_resource_index = gl.getProgramResourceIndex(program_id, gl.SHADER_STORAGE_BLOCK, "tiles");
+        gl.shaderStorageBlockBinding(program_id, tiles_buffer_resource_index, 1);
 
         gl.useProgram(program_id);
         gl.bindVertexArray(vao_id);
-        gl.bindBuffer(gl.SHADER_STORAGE_BUFFER, ssbo_id);
-        gl.bindBufferBase(gl.SHADER_STORAGE_BUFFER, 0, ssbo_id);
+        gl.bindBuffer(gl.SHADER_STORAGE_BUFFER, lines_buffer);
+        gl.bindBufferBase(gl.SHADER_STORAGE_BUFFER, 0, lines_buffer);
         gl.uniform1ui(0, @intCast(lines.len));
         gl.drawArrays(gl.TRIANGLES, 0, 6);
 
