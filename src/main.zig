@@ -11,6 +11,9 @@ const MAX_LINES = 10000;
 // The spatial partitioning tiles are NxN pixels in size
 const TILE_SIZE = 32;
 
+// The maximum distance a line may be to still be included in the
+const TILE_MARGIN = @as(comptime_float, TILE_SIZE) / 2.0 * @sqrt(2.0);
+
 const CPULine = struct {
     color: [4]u8,
     x0: u16,
@@ -59,10 +62,48 @@ const GpuLinesBufferStruct = extern struct {
     lines: [MAX_LINES]GPULine,
 };
 
-const GpuTile = packed struct {
-    num_tiles: u32,
-    lines: [MAX_LINES]u32,
+const GpuTile = extern struct {
+    num_lines: u32 = 0,
+    lines: [MAX_LINES]u32 = [_]u32{0} ** MAX_LINES,
 };
+
+// This is a one-to-one translation of the function found in the fragment shader to find line distance
+fn line_segment_distance(line: *const CPULine, x: f32, y: f32) f32 {
+    const lx0: f32 = @floatFromInt(line.x0);
+    const ly0: f32 = @floatFromInt(line.y0);
+    const lx1: f32 = @floatFromInt(line.x1);
+    const ly1: f32 = @floatFromInt(line.y1);
+
+    const ux = lx1 - lx0;
+    const uy = ly1 - ly0;
+
+    if (ux == 0 and uy == 0) {
+        const dx = x - lx1;
+        const dy = y - ly1;
+        return @sqrt(dx * dx + dy * dy);
+    }
+
+    const vx = x - lx0;
+    const vy = y - ly0;
+
+    const t = (ux * vx + uy * vy) / (ux * ux + uy * uy);
+
+    if (t < 0) {
+        const dx = x - lx0;
+        const dy = y - ly0;
+        return @sqrt(dx * dx + dy * dy);
+    } else if (t > 1) {
+        const dx = x - lx1;
+        const dy = y - ly1;
+        return @sqrt(dx * dx + dy * dy);
+    } else {
+        const zx = lx0 + t * ux;
+        const zy = ly0 + t * uy;
+        const dx = x - zx;
+        const dy = y - zy;
+        return @sqrt(dx * dx + dy * dy);
+    }
+}
 
 // First version with SSBOs, so I can just excrete the line data into a buffer that the pixel shader refines
 // A sane renderer would convert the lines to meshes or w/e but frankly I can't be bothered.
@@ -193,9 +234,10 @@ pub fn main(init: std.process.Init) !void {
 
     var frame_arena_obj = std.heap.ArenaAllocator.init(init.gpa);
     const frame_arena = frame_arena_obj.allocator();
+    defer frame_arena_obj.deinit();
 
     while (!window.shouldClose()) {
-        frame_arena_obj.reset(.retain_capacity);
+        _ = frame_arena_obj.reset(.retain_capacity);
 
         glfw.pollEvents();
 
@@ -211,16 +253,26 @@ pub fn main(init: std.process.Init) !void {
         gl.bufferSubData(gl.SHADER_STORAGE_BUFFER, 0, @sizeOf(GpuLinesBufferStruct), gpu_lines);
 
         // Update tile buffer
-        const num_x_tiles: u32 = (window_size[0] - 1) / TILE_SIZE + 1;
-        const num_y_tiles: u32 = (window_size[1] - 1) / TILE_SIZE + 1;
+        const num_x_tiles: u32 = @intCast(@divTrunc(window_size[0] - 1, TILE_SIZE) + 1);
+        const num_y_tiles: u32 = @intCast(@divTrunc(window_size[1] - 1, TILE_SIZE) + 1);
         const num_total_tiles = num_x_tiles * num_y_tiles;
         const tiles = try frame_arena.alloc(GpuTile, num_total_tiles);
+        @memset(tiles, .{});
 
-        // For now, um, idk just say every tile has every line xd
-        // TODO: actually make this "optimization" be an actual optimization
-        for (tiles) |*tile| {
-            for (MAX_LINES) |i| {
-                tile.lines[i] = i;
+        // Go through each tile and make a list of the lines that touch it.
+        for (tiles, 0..) |*tile, tile_index| {
+            const tile_x = tile_index % num_x_tiles;
+            const tile_y = tile_index / num_x_tiles;
+            const tile_pixel_x = @as(f32, @floatFromInt(tile_x)) * @as(f32, @floatFromInt(TILE_SIZE)) + @as(f32, @floatFromInt(TILE_SIZE)) / 2.0;
+            const tile_pixel_y = @as(f32, @floatFromInt(tile_y)) * @as(f32, @floatFromInt(TILE_SIZE)) + @as(f32, @floatFromInt(TILE_SIZE)) / 2.0;
+
+            for (0..MAX_LINES) |line_index| {
+                const line = lines[line_index];
+                const distance_to_tile = line_segment_distance(&line, tile_pixel_x, tile_pixel_y);
+                if (distance_to_tile < TILE_MARGIN + @as(f32, @floatFromInt(line.width)) / 2.0) {
+                    tile.lines[tile.num_lines] = @intCast(line_index);
+                    tile.num_lines += 1;
+                }
             }
         }
         gl.bindBuffer(gl.SHADER_STORAGE_BUFFER, tiles_buffer);
@@ -237,9 +289,11 @@ pub fn main(init: std.process.Init) !void {
 
         gl.useProgram(program_id);
         gl.bindVertexArray(vao_id);
-        gl.bindBuffer(gl.SHADER_STORAGE_BUFFER, lines_buffer);
         gl.bindBufferBase(gl.SHADER_STORAGE_BUFFER, 0, lines_buffer);
+        gl.bindBufferBase(gl.SHADER_STORAGE_BUFFER, 1, tiles_buffer);
         gl.uniform1ui(0, @intCast(lines.len));
+        gl.uniform1ui(1, @intCast(num_x_tiles));
+        gl.uniform1ui(2, @intCast(num_y_tiles));
         gl.drawArrays(gl.TRIANGLES, 0, 6);
 
         window.swapBuffers();

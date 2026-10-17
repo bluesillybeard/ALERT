@@ -24,15 +24,15 @@ struct line {
 };
 
 uint calculate_tile_index(vec2 pixel_pos) {
-    return uint(pixel_pos.x) / num_x_tiles + num_lines * uint(pixel_pos.y) / num_y_tiles;
+    return uint(pixel_pos.x) / 32 + num_x_tiles * (uint(pixel_pos.y) / 32);
 }
 
 uint tile_num_lines(uint tile_index) {
-    return line_ids[tile_index * (num_lines + 1)]
+    return line_ids[tile_index * (num_lines + 1)];
 }
 
 uint tile_line_id(uint tile_index, uint index) {
-    return line_ids[tile_index * (num_lines + 1) + index + 1]
+    return line_ids[tile_index * (num_lines + 1) + index + 1];
 }
 
 line extract_line(uint line_id) {
@@ -89,18 +89,13 @@ void main() {
     color = vec4(0, 0, 0, 1);
 
     vec2 pixel_pos = gl_FragCoord.xy;
-    uint tile = calculate_tile_index(pixel_pos)
-    uint num = tile_num_lines(tile)
-
+    uint tile = calculate_tile_index(pixel_pos);
+    uint num = tile_num_lines(tile);
     for(uint index = 0; index < num; index += 1) {
         uint id = tile_line_id(tile, index);
         line line_data = extract_line(id);
         float dist = line_segment_distance(line_data.p0, line_data.p1, pixel_pos);
         float diff = dist - line_data.width;
-        // This improved marginally at best
-        if (diff > 1) {
-            continue;
-        }
         color += mix(determine_line_color(line_data, dist), vec4(0), max(min(diff, 1), 0));
     }
 }
