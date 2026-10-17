@@ -9,7 +9,7 @@ const opengl = @import("opengl");
 const MAX_LINES = 10000;
 
 // The spatial partitioning tiles are NxN pixels in size
-const TILE_SIZE = 32;
+const TILE_SIZE = 64;
 
 // The maximum distance a line may be to still be included in the
 const TILE_MARGIN = @as(comptime_float, TILE_SIZE) / 2.0 * @sqrt(2.0);
@@ -238,6 +238,8 @@ pub fn main(init: std.process.Init) !void {
     const frame_arena = frame_arena_obj.allocator();
     defer frame_arena_obj.deinit();
 
+    var start = glfw.getTime();
+    var count: usize = 0;
     while (!window.shouldClose()) {
         _ = frame_arena_obj.reset(.retain_capacity);
 
@@ -311,6 +313,15 @@ pub fn main(init: std.process.Init) !void {
         gl.uniform1ui(1, @intCast(num_x_tiles));
         gl.uniform1ui(2, @intCast(num_y_tiles));
         gl.drawArrays(gl.TRIANGLES, 0, 6);
+
+        count += 1;
+        const end = glfw.getTime();
+        const diff = end - start;
+        if (diff > 1) {
+            std.log.info("Rendered {} frames in 1 second", .{count});
+            start += diff;
+            count = 0;
+        }
 
         window.swapBuffers();
     }

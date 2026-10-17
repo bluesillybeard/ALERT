@@ -29,7 +29,7 @@ struct line {
 };
 
 uint calculate_tile_index(vec2 pixel_pos) {
-    uint tid = uint(pixel_pos.x) / 32 + num_x_tiles * (uint(pixel_pos.y) / 32);
+    uint tid = uint(pixel_pos.x) / 64 + num_x_tiles * (uint(pixel_pos.y) / 64);
     return tile_index_buffer[tid];
 }
 
