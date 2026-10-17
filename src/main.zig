@@ -124,7 +124,7 @@ pub fn main(init: std.process.Init) !void {
     // We don't need a depth buffer... at all. No depth buffer. Don't give me one. Don't offer one. Don't even bother to allocate one.
     glfw.windowHint(glfw.WindowHint.depth_bits, 0);
 
-    glfw.swapInterval(1);
+    glfw.swapInterval(0);
 
     const window = try glfw.createWindow(800, 600, "ALERT", null, null);
     defer glfw.destroyWindow(window);

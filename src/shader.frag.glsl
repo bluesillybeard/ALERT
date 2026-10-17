@@ -5,8 +5,6 @@ layout(std430, binding = 0) buffer lines {
 };
 
 layout(std430, binding = 1) buffer tiles {
-    // Each tile has a single uint for the number of lines in that tile, then num_lines more uints each a tile ID for a line.
-    // I will admit, this is an obnoxious over-allocation of GPU memory, but lines are cheap as.
     uint line_ids[];
 };
 
@@ -63,11 +61,12 @@ line extract_line(uint line_id) {
     return line(color, p0, p1, width);
 }
 
-float line_segment_distance(vec2 ls, vec2 le, vec2 p) {
+float line_segment_distance_square(vec2 ls, vec2 le, vec2 p) {
     vec2 u = le - ls;
 
     if(u == vec2(0)) {
-        return length(p - ls);
+        vec2 d = p - ls;
+        return dot(d, d);
     }
 
     vec2 v = p - ls;
@@ -75,12 +74,15 @@ float line_segment_distance(vec2 ls, vec2 le, vec2 p) {
     float t = dot(u, v) / (u.x * u.x + u.y * u.y);
     
     if(t < 0){
-        return length(p - ls);
+        vec2 d = p - ls;
+        return dot(d, d);
     } else if(t > 1) {
-        return length(p - le);
+        vec2 d = p - le;
+        return dot(d, d);
     } else {
         vec2 z = ls + t * u;
-        return length(p - z);
+        vec2 d = p - z;
+        return dot(d, d);
     }
 }
 
@@ -100,8 +102,8 @@ void main() {
     for(uint index = 0; index < num; index += 1) {
         uint id = tile_line_id(tile, index);
         line line_data = extract_line(id);
-        float dist = line_segment_distance(line_data.p0, line_data.p1, pixel_pos);
-        float diff = dist - line_data.width;
-        color += mix(determine_line_color(line_data, dist), vec4(0), max(min(diff, 1), 0));
+        float dist = line_segment_distance_square(line_data.p0, line_data.p1, pixel_pos);
+        float diff = dist - line_data.width*line_data.width;
+        color += determine_line_color(line_data, dist);
     }
 }
