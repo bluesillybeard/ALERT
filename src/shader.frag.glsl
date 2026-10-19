@@ -165,12 +165,24 @@ void main() {
     color = vec4(0, 0, 0, 1);
 
     vec2 pixel_pos = gl_FragCoord.xy;
+    vec2 sample_offset[5] = {
+        vec2(0.25, 0.25),
+        vec2(0.25, -0.25),
+        vec2(-0.25, 0.25),
+        vec2(-0.25, -0.25),
+        vec2(0,0)
+    };
     uint tile = calculate_tile_index(pixel_pos);
     uint num = tile_num_lines(tile);
     for(uint index = 0; index < num; index += 1) {
         line line_data = extract_line(tile, index);
-        float dist = line_segment_distance_square(line_data.p0, line_data.p1, pixel_pos);
-        color += determine_line_color(line_data, dist);
+        vec4 line_color = vec4(0);
+        for(uint si = 0; si < 5; si++) {
+            float dist = line_segment_distance_square(line_data.p0, line_data.p1, pixel_pos + sample_offset[si]);
+            line_color += determine_line_color(line_data, dist);
+        }
+        line_color /= 5;
+        color += line_color;
     }
     color = vec4(rgb_to_srgb(color.rgb), color.a);
 }
