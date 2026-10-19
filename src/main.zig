@@ -215,22 +215,6 @@ pub fn main(init: std.process.Init) !void {
     // Benchmark: Create all of the lines
     var rand_obj = std.Random.DefaultPrng.init(42069);
     const rand = rand_obj.random();
-    const lines = try init.arena.allocator().alloc(CPULine, MAX_LINES);
-    const window_size_start = window.getSize();
-    for (0..MAX_LINES) |i| {
-        lines[i] = CPULine{
-            .color = .{ rand.int(u8), rand.int(u8), rand.int(u8), rand.int(u8) },
-            .x0 = rand.int(u16) % @as(u16, @intCast(window_size_start[0])),
-            .y0 = rand.int(u16) % @as(u16, @intCast(window_size_start[1])),
-            .x1 = rand.int(u16) % @as(u16, @intCast(window_size_start[0])),
-            .y1 = rand.int(u16) % @as(u16, @intCast(window_size_start[1])),
-            .vx0 = rand.float(f32) * 20,
-            .vy0 = rand.float(f32) * 20,
-            .vx1 = rand.float(f32) * 20,
-            .vy1 = rand.float(f32) * 20,
-            .width = rand.int(u8) % 20 + 3,
-        };
-    }
 
     const gpu_lines = try init.arena.allocator().create(GpuLinesBufferStruct);
 
@@ -248,6 +232,24 @@ pub fn main(init: std.process.Init) !void {
 
         const window_size = window.getSize();
         gl.viewport(0, 0, window_size[0], window_size[1]);
+
+        // randomize lines
+        const num_lines = rand.intRangeAtMost(usize, 5, 10);
+        const lines = try init.arena.allocator().alloc(CPULine, num_lines);
+        for (0..num_lines) |i| {
+            lines[i] = CPULine{
+                .color = .{ rand.int(u8), rand.int(u8), rand.int(u8), rand.int(u8) },
+                .x0 = rand.int(u16) % @as(u16, @intCast(window_size[0])),
+                .y0 = rand.int(u16) % @as(u16, @intCast(window_size[1])),
+                .x1 = rand.int(u16) % @as(u16, @intCast(window_size[0])),
+                .y1 = rand.int(u16) % @as(u16, @intCast(window_size[1])),
+                .vx0 = rand.float(f32) * 20,
+                .vy0 = rand.float(f32) * 20,
+                .vx1 = rand.float(f32) * 20,
+                .vy1 = rand.float(f32) * 20,
+                .width = rand.int(u8) % 20 + 3,
+            };
+        }
 
         for (0..lines.len) |i| {
             gpu_lines.lines[i] = lines[i].toGpu();
@@ -275,7 +277,7 @@ pub fn main(init: std.process.Init) !void {
             // Allocate the space for the #of lines in this tile
             tile_data.appendAssumeCapacity(0);
             var tile_num_lines: u32 = 0;
-            for (0..MAX_LINES) |line_index| {
+            for (0..lines.len) |line_index| {
                 const line = lines[line_index];
                 const distance_to_tile = line_segment_distance_square(&line, tile_pixel_x, tile_pixel_y);
                 const compare_to = TILE_MARGIN + @as(f32, @floatFromInt(line.width)) / 2.0;
