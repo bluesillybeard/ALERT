@@ -250,94 +250,27 @@ pub fn main(init: std.process.Init) !void {
         gl.viewport(0, 0, window_size[0], window_size[1]);
 
         // randomize lines
-        if (count == 0 and lines.len == 0) {
+        if (count == 0) {
             const num_lines = 5; //rand.intRangeAtMost(usize, 5, 10);
             if (lines.len > 0) {
                 init.gpa.free(lines);
             }
-            const color = [4]u8{ 50, 10, 10, 255 };
             lines = try init.gpa.alloc(CPULine, num_lines);
-            lines[0] = .{
-                .color = color,
-                .x0 = 50,
-                .y0 = 50,
-                .x1 = 50,
-                .y1 = 500,
-                .vx0 = 0,
-                .vy0 = 0,
-                .vx1 = 0,
-                .vy1 = 0,
-                .width = 30,
-                .style = .solid_color,
-            };
-            lines[1] = .{
-                .color = color,
-                .x0 = 150,
-                .y0 = 50,
-                .x1 = 150,
-                .y1 = 500,
-                .vx0 = 0,
-                .vy0 = 0,
-                .vx1 = 0,
-                .vy1 = 0,
-                .width = 30,
-                .style = .drop_linear,
-            };
-            lines[2] = .{
-                .color = color,
-                .x0 = 250,
-                .y0 = 50,
-                .x1 = 250,
-                .y1 = 500,
-                .vx0 = 0,
-                .vy0 = 0,
-                .vx1 = 0,
-                .vy1 = 0,
-                .width = 30,
-                .style = .decay_linear,
-            };
-            lines[3] = .{
-                .color = color,
-                .x0 = 350,
-                .y0 = 50,
-                .x1 = 350,
-                .y1 = 500,
-                .vx0 = 0,
-                .vy0 = 0,
-                .vx1 = 0,
-                .vy1 = 0,
-                .width = 30,
-                .style = .decay_quadratic,
-            };
-            lines[4] = .{
-                .color = color,
-                .x0 = 450,
-                .y0 = 50,
-                .x1 = 450,
-                .y1 = 500,
-                .vx0 = 0,
-                .vy0 = 0,
-                .vx1 = 0,
-                .vy1 = 0,
-                .width = 30,
-                .style = .decay_quintic,
-            };
-            _ = rand;
-            // for (0..num_lines) |i| {
-            //     lines[i] = CPULine{
-            //         .color = .{ rand.int(u8), rand.int(u8), rand.int(u8), rand.int(u8) },
-            //         .x0 = rand.int(u16) % @as(u16, @intCast(window_size[0])),
-            //         .y0 = rand.int(u16) % @as(u16, @intCast(window_size[1])),
-            //         .x1 = rand.int(u16) % @as(u16, @intCast(window_size[0])),
-            //         .y1 = rand.int(u16) % @as(u16, @intCast(window_size[1])),
-            //         .vx0 = rand.float(f32) * 20,
-            //         .vy0 = rand.float(f32) * 20,
-            //         .vx1 = rand.float(f32) * 20,
-            //         .vy1 = rand.float(f32) * 20,
-            //         .width = rand.int(u8) % 20 + 3,
-            //         .style = @enumFromInt(i),
-            //     };
-            // }
+            for (0..num_lines) |i| {
+                lines[i] = CPULine{
+                    .color = .{ rand.int(u8), rand.int(u8), rand.int(u8), rand.int(u8) },
+                    .x0 = rand.int(u16) % @as(u16, @intCast(window_size[0])),
+                    .y0 = rand.int(u16) % @as(u16, @intCast(window_size[1])),
+                    .x1 = rand.int(u16) % @as(u16, @intCast(window_size[0])),
+                    .y1 = rand.int(u16) % @as(u16, @intCast(window_size[1])),
+                    .vx0 = rand.float(f32) * 20,
+                    .vy0 = rand.float(f32) * 20,
+                    .vx1 = rand.float(f32) * 20,
+                    .vy1 = rand.float(f32) * 20,
+                    .width = rand.int(u8) % 20 + 3,
+                    .style = @enumFromInt(i),
+                };
+            }
         }
         for (0..lines.len) |i| {
             gpu_lines.lines[i] = lines[i].toGpu();
