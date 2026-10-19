@@ -35,15 +35,12 @@ uint tile_num_lines(uint tile_index) {
     return line_ids[tile_index];
 }
 
-uint tile_line_id(uint tile_index, uint index) {
-    return line_ids[tile_index + index + 1];
-}
-
-line extract_line(uint line_id) {
-    uint d0 = line_data[line_id * 4];
-    uint d1 = line_data[line_id * 4 + 1];
-    uint d2 = line_data[line_id * 4 + 2];
-    uint d3 = line_data[line_id * 4 + 3];
+line extract_line(uint tile, uint index) {
+    uint line_id = line_ids[tile + index + 1] * 4;
+    uint d0 = line_data[line_id];
+    uint d1 = line_data[line_id + 1];
+    uint d2 = line_data[line_id + 2];
+    uint d3 = line_data[line_id + 3];
 
     vec4 color = vec4(
         float(d0 & uint(255)),
@@ -90,7 +87,7 @@ vec4 determine_line_color(line line_data, float dist) {
     if (dist < 0.001) {
         dist = 0.001;
     }
-    return line_data.width * line_data.color / (dist * dist);
+    return line_data.width * line_data.color / (dist);
 }
 
 void main() {
@@ -100,10 +97,8 @@ void main() {
     uint tile = calculate_tile_index(pixel_pos);
     uint num = tile_num_lines(tile);
     for(uint index = 0; index < num; index += 1) {
-        uint id = tile_line_id(tile, index);
-        line line_data = extract_line(id);
+        line line_data = extract_line(tile, index);
         float dist = line_segment_distance_square(line_data.p0, line_data.p1, pixel_pos);
-        float diff = dist - line_data.width*line_data.width;
         color += determine_line_color(line_data, dist);
     }
 }
