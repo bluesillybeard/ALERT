@@ -94,8 +94,8 @@ line extract_line(uint tile, uint index) {
     color /= 255.0;
     color = vec4(srgb_to_rgb(color.rgb), color.a);
 
-    vec2 p0 = vec2(d1 & uint(65535), (d1 >> 16) & uint(65535));
-    vec2 p1 = vec2(d2 & uint(65535), (d2 >> 16) & uint(65535));
+    vec2 p0 = vec2(d1 & uint(65535), (d1 >> 16) & uint(65535)) + vec2(0.5, 0.5);
+    vec2 p1 = vec2(d2 & uint(65535), (d2 >> 16) & uint(65535)) + vec2(0.5, 0.5);
 
     float width = float(d3 & uint(255)) / 2.0;
 
