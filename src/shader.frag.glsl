@@ -1,21 +1,16 @@
 #version 430
 
-layout(std430, binding = 0) buffer lines {
+layout(std430, binding = 0) buffer tiles {
+    // Honestly just read the extract_line function
     uint line_data[];
 };
 
-layout(std430, binding = 1) buffer tiles {
-    uint line_ids[];
-};
-
-layout(std430, binding = 2) buffer tile_indices {
+layout(std430, binding = 1) buffer tile_indices {
     // This is a list with a length equal to the number of tiles, each item is the index into tiles where that tile starts.
     uint tile_index_buffer[];
 };
 
-layout(location = 0) uniform uint num_lines;
-layout(location = 1) uniform uint num_x_tiles;
-layout(location = 2) uniform uint num_y_tiles;
+layout(location = 0) uniform uint num_x_tiles;
 
 out vec4 color;
 
@@ -32,18 +27,15 @@ uint calculate_tile_index(vec2 pixel_pos) {
 }
 
 uint tile_num_lines(uint tile_index) {
-    return line_ids[tile_index];
+    return line_data[tile_index];
 }
 
-uint tile_line_id(uint tile_index, uint index) {
-    return line_ids[tile_index + index + 1];
-}
-
-line extract_line(uint line_id) {
-    uint d0 = line_data[line_id * 4];
-    uint d1 = line_data[line_id * 4 + 1];
-    uint d2 = line_data[line_id * 4 + 2];
-    uint d3 = line_data[line_id * 4 + 3];
+line extract_line(uint tile_index, uint line_id) {
+    uint offset = tile_index + 1 + line_id * 4;
+    uint d0 = line_data[offset];
+    uint d1 = line_data[offset + 1];
+    uint d2 = line_data[offset + 2];
+    uint d3 = line_data[offset + 3];
 
     vec4 color = vec4(
         float(d0 & uint(255)),
@@ -100,8 +92,7 @@ void main() {
     uint tile = calculate_tile_index(pixel_pos);
     uint num = tile_num_lines(tile);
     for(uint index = 0; index < num; index += 1) {
-        uint id = tile_line_id(tile, index);
-        line line_data = extract_line(id);
+        line line_data = extract_line(tile, index);
         float dist = line_segment_distance_square(line_data.p0, line_data.p1, pixel_pos);
         float diff = dist - line_data.width*line_data.width;
         color += determine_line_color(line_data, dist);
