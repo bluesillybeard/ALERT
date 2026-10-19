@@ -55,15 +55,6 @@ const GPULine = packed struct(u128) {
     width: u8,
     // whatever was left over such that the bit size of this type is 128 (also checked by the zig compiler)
     leftover: u24 = undefined,
-
-    pub fn encode(this: *const GPULine) [4]u32 {
-        return [4]u32{
-            @as(u32, this.r) | @as(u32, this.g) << 8 | @as(u32, this.b) << 16 | @as(u32, this.a) << 24,
-            @as(u32, this.x0) | @as(u32, this.y0) << 16,
-            @as(u32, this.x1) | @as(u32, this.y1) << 16,
-            @as(u32, this.width) | @as(u32, this.leftover) << 8,
-        };
-    }
 };
 
 // This is what ends up in the SSBO
@@ -73,7 +64,7 @@ const GpuLinesBufferStruct = extern struct {
 
 const GpuTile = extern struct {
     num_lines: u32 = 0,
-    lines: [MAX_LINES]GPULine = [_]GPULine{undefined} ** MAX_LINES,
+    lines: [MAX_LINES]u32 = [_]u32{0} ** MAX_LINES,
 };
 
 // This is a one-to-one translation of the function found in the fragment shader to find line distance
@@ -200,6 +191,14 @@ pub fn main(init: std.process.Init) !void {
     gl.deleteShader(vertex_shader_id);
     gl.deleteShader(fragment_shader_id);
 
+    // Make sure there is enough SSBO space to put all the lines
+    var lines_buffer: gl.Uint = 0;
+    gl.genBuffers(1, &lines_buffer);
+    gl.bindBuffer(gl.SHADER_STORAGE_BUFFER, lines_buffer);
+    // ask OpenGL to allocate the bytes we need but don't set them to anything yet
+    // I am furiously considering switching to OpenGL 4.5 or newer with their MUCH MUCH MUCH nicer named buffer API, but I want compatibility if possible.
+    gl.bufferData(gl.SHADER_STORAGE_BUFFER, @sizeOf(GpuLinesBufferStruct), null, gl.DYNAMIC_DRAW);
+
     // unfortunately unlike the lines buffer, the size of the tiles buffer may change each frame so we cannot pre-allocate (sad)
     var tiles_buffer: gl.Uint = 0;
     gl.genBuffers(1, &tiles_buffer);
@@ -254,6 +253,10 @@ pub fn main(init: std.process.Init) !void {
             gpu_lines.lines[i] = lines[i].toGpu();
         }
 
+        // Upload new lines
+        gl.bindBuffer(gl.SHADER_STORAGE_BUFFER, lines_buffer);
+        gl.bufferSubData(gl.SHADER_STORAGE_BUFFER, 0, @sizeOf(GpuLinesBufferStruct), gpu_lines);
+
         // Update tile buffer
         const num_x_tiles: u32 = @intCast(@divTrunc(window_size[0] - 1, TILE_SIZE) + 1);
         const num_y_tiles: u32 = @intCast(@divTrunc(window_size[1] - 1, TILE_SIZE) + 1);
@@ -261,7 +264,7 @@ pub fn main(init: std.process.Init) !void {
 
         // Go through each tile and make a list of the lines that touch it.
         const tile_indices = try frame_arena.alloc(u32, num_total_tiles);
-        var tile_data = try std.ArrayList(u32).initCapacity(frame_arena, num_total_tiles * (MAX_LINES * 4 + 1));
+        var tile_data = try std.ArrayList(u32).initCapacity(frame_arena, num_total_tiles * (MAX_LINES + 1));
         for (0..num_total_tiles) |tile_index| {
             const tile_x = tile_index % num_x_tiles;
             const tile_y = tile_index / num_x_tiles;
@@ -277,8 +280,7 @@ pub fn main(init: std.process.Init) !void {
                 const distance_to_tile = line_segment_distance_square(&line, tile_pixel_x, tile_pixel_y);
                 const compare_to = TILE_MARGIN + @as(f32, @floatFromInt(line.width)) / 2.0;
                 if (distance_to_tile < compare_to * compare_to) {
-                    const encoded = line.toGpu().encode();
-                    tile_data.appendSliceAssumeCapacity(&encoded);
+                    tile_data.appendAssumeCapacity(@intCast(line_index));
                     tile_num_lines += 1;
                 }
             }
@@ -292,24 +294,31 @@ pub fn main(init: std.process.Init) !void {
         gl.bindBuffer(gl.SHADER_STORAGE_BUFFER, tiles_buffer);
         gl.bufferData(gl.SHADER_STORAGE_BUFFER, @intCast(tile_data.items.len * @sizeOf(u32)), tile_data.items.ptr, gl.DYNAMIC_DRAW);
 
+        total_upload += @sizeOf(GpuLinesBufferStruct) + @sizeOf(u32) * tile_indices.len + @sizeOf(u32) * tile_data.items.len;
+
         // Draw
         gl.clear(gl.COLOR_BUFFER_BIT);
 
+        const lines_buffer_resource_index = gl.getProgramResourceIndex(program_id, gl.SHADER_STORAGE_BLOCK, "lines");
+        gl.shaderStorageBlockBinding(program_id, lines_buffer_resource_index, 0);
+
         const tiles_buffer_resource_index = gl.getProgramResourceIndex(program_id, gl.SHADER_STORAGE_BLOCK, "tiles");
-        gl.shaderStorageBlockBinding(program_id, tiles_buffer_resource_index, 0);
+        gl.shaderStorageBlockBinding(program_id, tiles_buffer_resource_index, 1);
 
         const tile_indices_buffer_resource_index = gl.getProgramResourceIndex(program_id, gl.SHADER_STORAGE_BLOCK, "tile_indices");
-        gl.shaderStorageBlockBinding(program_id, tile_indices_buffer_resource_index, 1);
+        gl.shaderStorageBlockBinding(program_id, tile_indices_buffer_resource_index, 2);
 
         gl.useProgram(program_id);
         gl.bindVertexArray(vao_id);
-        gl.bindBufferBase(gl.SHADER_STORAGE_BUFFER, 0, tiles_buffer);
-        gl.bindBufferBase(gl.SHADER_STORAGE_BUFFER, 1, tile_indices_buffer);
-        gl.uniform1ui(0, @intCast(num_x_tiles));
+        gl.bindBufferBase(gl.SHADER_STORAGE_BUFFER, 0, lines_buffer);
+        gl.bindBufferBase(gl.SHADER_STORAGE_BUFFER, 1, tiles_buffer);
+        gl.bindBufferBase(gl.SHADER_STORAGE_BUFFER, 2, tile_indices_buffer);
+        gl.uniform1ui(0, @intCast(lines.len));
+        gl.uniform1ui(1, @intCast(num_x_tiles));
+        gl.uniform1ui(2, @intCast(num_y_tiles));
         gl.drawArrays(gl.TRIANGLES, 0, 6);
 
         count += 1;
-        total_upload += @sizeOf(u32) * tile_indices.len + @sizeOf(u32) * tile_data.items.len;
         const end = glfw.getTime();
         const diff = end - start;
         if (diff > 1) {
