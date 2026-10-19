@@ -14,6 +14,14 @@ const TILE_SIZE = 64;
 // The maximum distance a line may be to still be included in the
 const TILE_MARGIN = @as(comptime_float, TILE_SIZE) / 2.0 * @sqrt(2.0);
 
+const LineStyle = enum(u8) {
+    solid_color = 0,
+    drop_linear,
+    decay_linear,
+    decay_quadratic,
+    decay_quintic,
+};
+
 const CPULine = struct {
     color: [4]u8,
     x0: u16,
@@ -25,6 +33,7 @@ const CPULine = struct {
     vx1: f32,
     vy1: f32,
     width: u8,
+    style: LineStyle,
 
     pub fn toGpu(this: *const CPULine) GPULine {
         return GPULine{
@@ -37,6 +46,7 @@ const CPULine = struct {
             .x1 = this.x1,
             .y1 = this.y1,
             .width = this.width,
+            .style = @intFromEnum(this.style),
         };
     }
 };
@@ -53,8 +63,9 @@ const GPULine = packed struct(u128) {
     y1: u16,
     // width is in half pixels
     width: u8,
+    style: u8,
     // whatever was left over such that the bit size of this type is 128 (also checked by the zig compiler)
-    leftover: u24 = undefined,
+    leftover: u16 = undefined,
 };
 
 // This is what ends up in the SSBO
@@ -222,6 +233,11 @@ pub fn main(init: std.process.Init) !void {
     const frame_arena = frame_arena_obj.allocator();
     defer frame_arena_obj.deinit();
 
+    var lines: []CPULine = &[0]CPULine{};
+    defer if (lines.len > 0) {
+        init.gpa.free(lines);
+    };
+
     var start = glfw.getTime();
     var count: usize = 0;
     var total_upload: usize = 0;
@@ -234,23 +250,95 @@ pub fn main(init: std.process.Init) !void {
         gl.viewport(0, 0, window_size[0], window_size[1]);
 
         // randomize lines
-        const num_lines = rand.intRangeAtMost(usize, 5, 10);
-        const lines = try init.arena.allocator().alloc(CPULine, num_lines);
-        for (0..num_lines) |i| {
-            lines[i] = CPULine{
-                .color = .{ rand.int(u8), rand.int(u8), rand.int(u8), rand.int(u8) },
-                .x0 = rand.int(u16) % @as(u16, @intCast(window_size[0])),
-                .y0 = rand.int(u16) % @as(u16, @intCast(window_size[1])),
-                .x1 = rand.int(u16) % @as(u16, @intCast(window_size[0])),
-                .y1 = rand.int(u16) % @as(u16, @intCast(window_size[1])),
-                .vx0 = rand.float(f32) * 20,
-                .vy0 = rand.float(f32) * 20,
-                .vx1 = rand.float(f32) * 20,
-                .vy1 = rand.float(f32) * 20,
-                .width = rand.int(u8) % 20 + 3,
+        if (count == 0 and lines.len == 0) {
+            const num_lines = 5; //rand.intRangeAtMost(usize, 5, 10);
+            if (lines.len > 0) {
+                init.gpa.free(lines);
+            }
+            const color = [4]u8{ 50, 10, 10, 255 };
+            lines = try init.gpa.alloc(CPULine, num_lines);
+            lines[0] = .{
+                .color = color,
+                .x0 = 50,
+                .y0 = 50,
+                .x1 = 50,
+                .y1 = 500,
+                .vx0 = 0,
+                .vy0 = 0,
+                .vx1 = 0,
+                .vy1 = 0,
+                .width = 30,
+                .style = .solid_color,
             };
+            lines[1] = .{
+                .color = color,
+                .x0 = 150,
+                .y0 = 50,
+                .x1 = 150,
+                .y1 = 500,
+                .vx0 = 0,
+                .vy0 = 0,
+                .vx1 = 0,
+                .vy1 = 0,
+                .width = 30,
+                .style = .drop_linear,
+            };
+            lines[2] = .{
+                .color = color,
+                .x0 = 250,
+                .y0 = 50,
+                .x1 = 250,
+                .y1 = 500,
+                .vx0 = 0,
+                .vy0 = 0,
+                .vx1 = 0,
+                .vy1 = 0,
+                .width = 30,
+                .style = .decay_linear,
+            };
+            lines[3] = .{
+                .color = color,
+                .x0 = 350,
+                .y0 = 50,
+                .x1 = 350,
+                .y1 = 500,
+                .vx0 = 0,
+                .vy0 = 0,
+                .vx1 = 0,
+                .vy1 = 0,
+                .width = 30,
+                .style = .decay_quadratic,
+            };
+            lines[4] = .{
+                .color = color,
+                .x0 = 450,
+                .y0 = 50,
+                .x1 = 450,
+                .y1 = 500,
+                .vx0 = 0,
+                .vy0 = 0,
+                .vx1 = 0,
+                .vy1 = 0,
+                .width = 30,
+                .style = .decay_quintic,
+            };
+            _ = rand;
+            // for (0..num_lines) |i| {
+            //     lines[i] = CPULine{
+            //         .color = .{ rand.int(u8), rand.int(u8), rand.int(u8), rand.int(u8) },
+            //         .x0 = rand.int(u16) % @as(u16, @intCast(window_size[0])),
+            //         .y0 = rand.int(u16) % @as(u16, @intCast(window_size[1])),
+            //         .x1 = rand.int(u16) % @as(u16, @intCast(window_size[0])),
+            //         .y1 = rand.int(u16) % @as(u16, @intCast(window_size[1])),
+            //         .vx0 = rand.float(f32) * 20,
+            //         .vy0 = rand.float(f32) * 20,
+            //         .vx1 = rand.float(f32) * 20,
+            //         .vy1 = rand.float(f32) * 20,
+            //         .width = rand.int(u8) % 20 + 3,
+            //         .style = @enumFromInt(i),
+            //     };
+            // }
         }
-
         for (0..lines.len) |i| {
             gpu_lines.lines[i] = lines[i].toGpu();
         }

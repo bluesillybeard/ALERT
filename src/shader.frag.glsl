@@ -24,6 +24,7 @@ struct line {
     vec2 p0;
     vec2 p1;
     float width;
+    uint style;
 };
 
 uint calculate_tile_index(vec2 pixel_pos) {
@@ -55,7 +56,9 @@ line extract_line(uint tile, uint index) {
 
     float width = float(d3 & uint(255)) / 2.0;
 
-    return line(color, p0, p1, width);
+    uint style = d3 >> 8 & uint(255);
+
+    return line(color, p0, p1, width, style);
 }
 
 float line_segment_distance_square(vec2 ls, vec2 le, vec2 p) {
@@ -83,11 +86,36 @@ float line_segment_distance_square(vec2 ls, vec2 le, vec2 p) {
     }
 }
 
-vec4 determine_line_color(line line_data, float dist) {
-    if (dist < 0.001) {
-        dist = 0.001;
+vec4 determine_line_color(line line_data, float dist_sq) {
+    if (dist_sq < 0.001) {
+        dist_sq = 0.001;
     }
-    return line_data.width * line_data.color / (dist);
+    vec4 color;
+    float dist = sqrt(dist_sq);
+    if (line_data.style == 0) {
+        // Solid color
+        color = line_data.color;
+    } else if (line_data.style == 1) {
+        // linear drop
+        color = line_data.color * (line_data.width - dist) / line_data.width;
+    } else if (line_data.style == 2) {
+        // linear decay, note the extra component to guarantee it smoothly transitions to zero
+        float factor_at_width = 1 / line_data.width;
+        color = line_data.color * line_data.width * (1 / dist - factor_at_width);
+    } else if (line_data.style == 3) {
+        // quadratic decay
+        float factor_at_width = 1 / (line_data.width * line_data.width);
+        color = line_data.color * line_data.width * (1 / dist_sq - factor_at_width);
+    } else if (line_data.style == 4) {
+        // quintic decay
+        float factor_at_width = 1 / (line_data.width * line_data.width * line_data.width * line_data.width);
+        color = line_data.color * line_data.width * (1 / (dist_sq * dist_sq) - factor_at_width);
+    } else {
+        return vec4(1, 0, 1, 1);
+    }
+    // apply anti-aliasing
+    color = mix(color, vec4(0), clamp((dist - line_data.width), 0, 1));
+    return color;
 }
 
 void main() {
