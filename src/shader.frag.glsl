@@ -19,7 +19,49 @@ layout(location = 2) uniform uint num_y_tiles;
 
 out vec4 color;
 
+// source: https://github.com/tobspr/GLSL-Color-Spaces/blob/master/ColorSpaces.inc.glsl
+// TODO: compare results between this exact version v.s the fast but approximate version
+
+const float SRGB_GAMMA = 1.0 / 2.2;
+const float SRGB_INVERSE_GAMMA = 2.2;
+const float SRGB_ALPHA = 0.055;
+
+// Converts a single linear channel to srgb
+float linear_to_srgb(float channel) {
+    if(channel <= 0.0031308)
+        return 12.92 * channel;
+    else
+        return (1.0 + SRGB_ALPHA) * pow(channel, 1.0/2.4) - SRGB_ALPHA;
+}
+
+// Converts a single srgb channel to rgb
+float srgb_to_linear(float channel) {
+    if (channel <= 0.04045)
+        return channel / 12.92;
+    else
+        return pow((channel + SRGB_ALPHA) / (1.0 + SRGB_ALPHA), 2.4);
+}
+
+// Converts a linear rgb color to a srgb color (exact, not approximated)
+vec3 rgb_to_srgb(vec3 rgb) {
+    return vec3(
+        linear_to_srgb(rgb.r),
+        linear_to_srgb(rgb.g),
+        linear_to_srgb(rgb.b)
+    );
+}
+
+// Converts a srgb color to a linear rgb color (exact, not approximated)
+vec3 srgb_to_rgb(vec3 srgb) {
+    return vec3(
+        srgb_to_linear(srgb.r),
+        srgb_to_linear(srgb.g),
+        srgb_to_linear(srgb.b)
+    );
+}
+
 struct line {
+    // In linear color space
     vec4 color;
     vec2 p0;
     vec2 p1;
@@ -50,6 +92,7 @@ line extract_line(uint tile, uint index) {
         float((d0 >> 24) & uint(255))
     );
     color /= 255.0;
+    color = vec4(srgb_to_rgb(color.rgb), color.a);
 
     vec2 p0 = vec2(d1 & uint(65535), (d1 >> 16) & uint(65535));
     vec2 p1 = vec2(d2 & uint(65535), (d2 >> 16) & uint(65535));
@@ -87,8 +130,8 @@ float line_segment_distance_square(vec2 ls, vec2 le, vec2 p) {
 }
 
 vec4 determine_line_color(line line_data, float dist_sq) {
-    if (dist_sq < 0.001) {
-        dist_sq = 0.001;
+    if (dist_sq < 0.00001) {
+        dist_sq = 0.00001;
     }
     vec4 color;
     float dist = sqrt(dist_sq);
@@ -129,4 +172,5 @@ void main() {
         float dist = line_segment_distance_square(line_data.p0, line_data.p1, pixel_pos);
         color += determine_line_color(line_data, dist);
     }
+    color = vec4(rgb_to_srgb(color.rgb), color.a);
 }
