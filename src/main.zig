@@ -247,7 +247,7 @@ pub fn main(init: std.process.Init) !void {
 
         // randomize lines
         if (window.getKey(glfw.Key.space) == .press) {
-            const num_lines = 5; //rand.intRangeAtMost(usize, 5, 10);
+            const num_lines = 1000; //rand.intRangeAtMost(usize, 5, 10);
             if (lines.len > 0) {
                 init.gpa.free(lines);
             }
@@ -260,7 +260,7 @@ pub fn main(init: std.process.Init) !void {
                     .x1 = rand.int(u16) % @as(u16, @intCast(window_size[0])),
                     .y1 = rand.int(u16) % @as(u16, @intCast(window_size[1])),
                     .width = rand.int(u8) % 30 + 10,
-                    .style = @enumFromInt(i),
+                    .style = rand.enumValue(LineStyle),
                 };
             }
         }
