@@ -22,9 +22,31 @@ out vec4 color;
 // source: https://github.com/tobspr/GLSL-Color-Spaces/blob/master/ColorSpaces.inc.glsl
 // TODO: compare results between this exact version v.s the fast but approximate version
 
-const float SRGB_GAMMA = 1.0 / 2.2;
-const float SRGB_INVERSE_GAMMA = 2.2;
 const float SRGB_ALPHA = 0.055;
+
+// Used to convert from linear RGB to XYZ space
+const mat3 RGB_2_XYZ = (mat3(
+    0.4124564, 0.2126729, 0.0193339,
+    0.3575761, 0.7151522, 0.1191920,
+    0.1804375, 0.0721750, 0.9503041
+));
+
+// Used to convert from XYZ to linear RGB space
+const mat3 XYZ_2_RGB = (mat3(
+     3.2404542,-0.9692660, 0.0556434,
+    -1.5371385, 1.8760108,-0.2040259,
+    -0.4985314, 0.0415560, 1.0572252
+));
+
+// Converts a color from linear RGB to XYZ space
+vec3 rgb_to_xyz(vec3 rgb) {
+    return RGB_2_XYZ * rgb;
+}
+
+// Converts a color from XYZ to linear RGB space
+vec3 xyz_to_rgb(vec3 xyz) {
+    return XYZ_2_RGB * xyz;
+}
 
 // Converts a single linear channel to srgb
 float linear_to_srgb(float channel) {
@@ -60,6 +82,9 @@ vec3 srgb_to_rgb(vec3 srgb) {
     );
 }
 
+vec3 xyz_to_srgb(vec3 xyz)  { return rgb_to_srgb(xyz_to_rgb(xyz)); }
+vec3 srgb_to_xyz(vec3 srgb) { return rgb_to_xyz(srgb_to_rgb(srgb)); }
+
 struct line {
     // In linear color space
     vec4 color;
@@ -92,7 +117,7 @@ line extract_line(uint tile, uint index) {
         float((d0 >> 24) & uint(255))
     );
     color /= 255.0;
-    color = vec4(srgb_to_rgb(color.rgb), color.a);
+    color = vec4(srgb_to_xyz(color.rgb), color.a);
 
     vec2 p0 = vec2(d1 & uint(65535), (d1 >> 16) & uint(65535)) + vec2(0.5, 0.5);
     vec2 p1 = vec2(d2 & uint(65535), (d2 >> 16) & uint(65535)) + vec2(0.5, 0.5);
@@ -132,8 +157,8 @@ float line_segment_distance_square(vec2 ls, vec2 le, vec2 p) {
 float determine_factor(uint style, float dist_sq, float width) {
     if(dist_sq > width * width) {
         return 0;
-    } else if (dist_sq < 0.5) {
-        dist_sq = 0.5;
+    } else if (dist_sq < 0.25) {
+        dist_sq = 0.25;
     }
     float dist = sqrt(dist_sq);
     if (style == 0) {
@@ -177,5 +202,5 @@ void main() {
         vec3 result = determine_line_color(line_data, dist);
         color += vec4(result * line_data.color.a, line_data.color.a);
     }
-    color = vec4(rgb_to_srgb(color.rgb), 1);
+    color = vec4(xyz_to_srgb(color.rgb), 1);
 }
