@@ -129,60 +129,53 @@ float line_segment_distance_square(vec2 ls, vec2 le, vec2 p) {
     }
 }
 
-vec4 determine_line_color(line line_data, float dist_sq) {
-    if (dist_sq < 0.00001) {
-        dist_sq = 0.00001;
+float determine_factor(uint style, float dist_sq, float width) {
+    if(dist_sq > width * width) {
+        return 0;
+    } else if (dist_sq < 0.5) {
+        dist_sq = 0.5;
     }
-    vec4 color;
     float dist = sqrt(dist_sq);
-    if (line_data.style == 0) {
+    if (style == 0) {
         // Solid color
-        color = line_data.color;
-    } else if (line_data.style == 1) {
+        return 1;
+    } else if (style == 1) {
         // linear drop
-        color = line_data.color * (line_data.width - dist) / line_data.width;
-    } else if (line_data.style == 2) {
+        return (width - dist) / width;
+    } else if (style == 2) {
         // linear decay, note the extra component to guarantee it smoothly transitions to zero
-        float factor_at_width = 1 / line_data.width;
-        color = line_data.color * line_data.width * (1 / dist - factor_at_width);
-    } else if (line_data.style == 3) {
+        float factor_at_width = 1 / width;
+        return width * (1 / dist - factor_at_width);
+    } else if (style == 3) {
         // quadratic decay
-        float factor_at_width = 1 / (line_data.width * line_data.width);
-        color = line_data.color * line_data.width * (1 / dist_sq - factor_at_width);
-    } else if (line_data.style == 4) {
+        float factor_at_width = 1 / (width * width);
+        return width * (1 / dist_sq - factor_at_width);
+    } else if (style == 4) {
         // quintic decay
-        float factor_at_width = 1 / (line_data.width * line_data.width * line_data.width * line_data.width);
-        color = line_data.color * line_data.width * (1 / (dist_sq * dist_sq) - factor_at_width);
+        float factor_at_width = 1 / (width * width * width * width);
+        return width * (1 / (dist_sq * dist_sq) - factor_at_width);
     } else {
-        return vec4(1, 0, 1, 1);
+        return -1;
     }
-    // apply anti-aliasing
-    color = mix(color, vec4(0), clamp((dist - line_data.width), 0, 1));
-    return color;
+}
+
+vec3 determine_line_color(line line_data, float dist_sq) {
+    float factor = determine_factor(line_data.style, dist_sq, line_data.width);
+    float aa_factor = clamp((line_data.width - sqrt(dist_sq)), 0, 1);
+    return line_data.color.rgb * factor * aa_factor;
 }
 
 void main() {
     color = vec4(0, 0, 0, 1);
 
     vec2 pixel_pos = gl_FragCoord.xy;
-    vec2 sample_offset[5] = {
-        vec2(0.25, 0.25),
-        vec2(0.25, -0.25),
-        vec2(-0.25, 0.25),
-        vec2(-0.25, -0.25),
-        vec2(0,0)
-    };
     uint tile = calculate_tile_index(pixel_pos);
     uint num = tile_num_lines(tile);
     for(uint index = 0; index < num; index += 1) {
         line line_data = extract_line(tile, index);
-        vec4 line_color = vec4(0);
-        for(uint si = 0; si < 5; si++) {
-            float dist = line_segment_distance_square(line_data.p0, line_data.p1, pixel_pos + sample_offset[si]);
-            line_color += determine_line_color(line_data, dist);
-        }
-        line_color /= 5;
-        color += line_color;
+        float dist = line_segment_distance_square(line_data.p0, line_data.p1, pixel_pos);
+        vec3 result = determine_line_color(line_data, dist);
+        color += vec4(result * line_data.color.a, line_data.color.a);
     }
-    color = vec4(rgb_to_srgb(color.rgb), color.a);
+    color = vec4(rgb_to_srgb(color.rgb), 1);
 }

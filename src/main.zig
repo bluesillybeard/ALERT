@@ -28,10 +28,6 @@ const CPULine = struct {
     y0: u16,
     x1: u16,
     y1: u16,
-    vx0: f32,
-    vy0: f32,
-    vx1: f32,
-    vy1: f32,
     width: u8,
     style: LineStyle,
 
@@ -250,7 +246,7 @@ pub fn main(init: std.process.Init) !void {
         gl.viewport(0, 0, window_size[0], window_size[1]);
 
         // randomize lines
-        if (count == 0) {
+        if (window.getKey(glfw.Key.space) == .press) {
             const num_lines = 5; //rand.intRangeAtMost(usize, 5, 10);
             if (lines.len > 0) {
                 init.gpa.free(lines);
@@ -263,15 +259,12 @@ pub fn main(init: std.process.Init) !void {
                     .y0 = rand.int(u16) % @as(u16, @intCast(window_size[1])),
                     .x1 = rand.int(u16) % @as(u16, @intCast(window_size[0])),
                     .y1 = rand.int(u16) % @as(u16, @intCast(window_size[1])),
-                    .vx0 = rand.float(f32) * 20,
-                    .vy0 = rand.float(f32) * 20,
-                    .vx1 = rand.float(f32) * 20,
-                    .vy1 = rand.float(f32) * 20,
-                    .width = rand.int(u8) % 20 + 3,
+                    .width = rand.int(u8) % 30 + 10,
                     .style = @enumFromInt(i),
                 };
             }
         }
+
         for (0..lines.len) |i| {
             gpu_lines.lines[i] = lines[i].toGpu();
         }
