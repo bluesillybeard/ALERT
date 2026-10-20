@@ -9,7 +9,7 @@ const opengl = @import("opengl");
 const MAX_LINES = 10000;
 
 // The spatial partitioning tiles are NxN pixels in size
-const TILE_SIZE = 64;
+const TILE_SIZE = 16;
 
 // The maximum distance a line may be to still be included in the
 const TILE_MARGIN = @as(comptime_float, TILE_SIZE) / 2.0 * @sqrt(2.0);
@@ -247,7 +247,7 @@ pub fn main(init: std.process.Init) !void {
 
         // randomize lines
         if (window.getKey(glfw.Key.space) == .press) {
-            const num_lines = 1000; //rand.intRangeAtMost(usize, 5, 10);
+            const num_lines = 10; //rand.intRangeAtMost(usize, 5, 10);
             if (lines.len > 0) {
                 init.gpa.free(lines);
             }

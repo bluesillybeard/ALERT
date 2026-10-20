@@ -95,7 +95,7 @@ struct line {
 };
 
 uint calculate_tile_index(vec2 pixel_pos) {
-    uint tid = uint(pixel_pos.x) / 64 + num_x_tiles * (uint(pixel_pos.y) / 64);
+    uint tid = uint(pixel_pos.x) / 16 + num_x_tiles * (uint(pixel_pos.y) / 16);
     return tile_index_buffer[tid];
 }
 
@@ -191,7 +191,7 @@ vec3 determine_line_color(line line_data, float dist_sq) {
 }
 
 void main() {
-    color = vec4(0, 0, 0, 1);
+    color = vec4(0, 0, 0, 0);
 
     vec2 pixel_pos = gl_FragCoord.xy;
     uint tile = calculate_tile_index(pixel_pos);
