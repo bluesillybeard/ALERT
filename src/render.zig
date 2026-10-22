@@ -35,7 +35,7 @@ pub const Color = packed struct(u32) {
     a: u8 = 255,
 };
 
-pub const Pos = packed struct (u32) {
+pub const Pos = packed struct(u32) {
     x: u16,
     y: u16,
 };
@@ -50,11 +50,6 @@ pub const Line = packed struct(u128) {
     style: LineStyle,
     // whatever was left over such that the bit size of this type is 128 (also checked by the zig compiler)
     leftover: u16 = undefined,
-};
-
-const GpuTile = extern struct {
-    num_lines: u32 = 0,
-    lines: [MAX_LINES]u32 = [_]u32{0} ** MAX_LINES,
 };
 
 // This is a one-to-one translation of the function found in the fragment shader to find line distance
@@ -123,7 +118,7 @@ pub const Renderer = struct {
         // We don't need a depth buffer... at all. No depth buffer. Don't give me one. Don't offer one. Don't even bother to allocate one.
         glfw.windowHint(glfw.WindowHint.depth_bits, 0);
 
-        glfw.swapInterval(0);
+        glfw.swapInterval(1);
 
         const window = try glfw.createWindow(800, 600, "ALERT", null, null);
         glfw.makeContextCurrent(window);
@@ -215,6 +210,10 @@ pub const Renderer = struct {
         };
     }
 
+    pub fn drawLine(this: *Renderer, line: Line) !void {
+        try this.lines.appendBounded(line);
+    }
+
     pub fn frame(this: *Renderer, allocator: std.mem.Allocator, temp_alloc: std.mem.Allocator) !void {
         _ = allocator;
         const window_size = this.window.getSize();
@@ -240,14 +239,14 @@ pub const Renderer = struct {
 
             const start_index = tile_data.items.len;
             // Allocate the space for the #of lines in this tile
-            tile_data.appendAssumeCapacity(0);
+            try tile_data.appendBounded(0);
             var tile_num_lines: u32 = 0;
             for (0..this.lines.items.len) |line_index| {
                 const line = this.lines.items[line_index];
-                const distance_to_tile = line_segment_distance_square(line.start, line.end, .{.x = tile_pixel_x, .y = tile_pixel_y});
+                const distance_to_tile = line_segment_distance_square(line.start, line.end, .{ .x = tile_pixel_x, .y = tile_pixel_y });
                 const compare_to = TILE_MARGIN + @as(f32, @floatFromInt(line.width)) / 2.0;
                 if (distance_to_tile < compare_to * compare_to) {
-                    tile_data.appendAssumeCapacity(@intCast(line_index));
+                    tile_data.appendBounded(@intCast(line_index));
                     tile_num_lines += 1;
                 }
             }
@@ -284,6 +283,8 @@ pub const Renderer = struct {
         gl.drawArrays(gl.TRIANGLES, 0, 6);
 
         this.window.swapBuffers();
+
+        this.lines.clearRetainingCapacity();
 
         // TODO: Polling events should really be done per-update and not per frame
         glfw.pollEvents();
