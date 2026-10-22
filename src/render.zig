@@ -40,6 +40,11 @@ pub const Pos = packed struct(u32) {
     y: u16,
 };
 
+pub const BlendMode = enum(u8) {
+    add = 0,
+    mix,
+};
+
 pub const Line = packed struct(u128) {
     color: Color,
     // These are in pixel coordinates (if you have more than a 65k x 65k monitor playing this game... I'm sorry.)
@@ -48,8 +53,9 @@ pub const Line = packed struct(u128) {
     // width is in half pixels
     width: u8,
     style: LineStyle,
+    blend_mode: BlendMode = .add,
     // whatever was left over such that the bit size of this type is 128 (also checked by the zig compiler)
-    leftover: u16 = undefined,
+    leftover: u8 = undefined,
 };
 
 // This is a one-to-one translation of the function found in the fragment shader to find line distance
@@ -246,7 +252,7 @@ pub const Renderer = struct {
                 const distance_to_tile = line_segment_distance_square(line.start, line.end, .{ .x = tile_pixel_x, .y = tile_pixel_y });
                 const compare_to = TILE_MARGIN + @as(f32, @floatFromInt(line.width)) / 2.0;
                 if (distance_to_tile < compare_to * compare_to) {
-                    tile_data.appendBounded(@intCast(line_index));
+                    try tile_data.appendBounded(@intCast(line_index));
                     tile_num_lines += 1;
                 }
             }

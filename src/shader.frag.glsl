@@ -92,6 +92,7 @@ struct line {
     vec2 p1;
     float width;
     uint style;
+    uint mode;
 };
 
 uint calculate_tile_index(vec2 pixel_pos) {
@@ -126,7 +127,9 @@ line extract_line(uint tile, uint index) {
 
     uint style = d3 >> 8 & uint(255);
 
-    return line(color, p0, p1, width, style);
+    uint mode = d3 >> 16 & uint(255);
+
+    return line(color, p0, p1, width, style, mode);
 }
 
 float line_segment_distance_square(vec2 ls, vec2 le, vec2 p) {
@@ -154,40 +157,38 @@ float line_segment_distance_square(vec2 ls, vec2 le, vec2 p) {
     }
 }
 
-float determine_factor(uint style, float dist_sq, float width) {
+vec2 determine_factor(uint style, float dist_sq, float width) {
+    float factor = 0;
     if(dist_sq > width * width) {
-        return 0;
+        return vec2(0, 0);
     } else if (dist_sq < 0.25) {
         dist_sq = 0.25;
     }
     float dist = sqrt(dist_sq);
     if (style == 0) {
         // Solid color
-        return 1;
+        factor = 1;
     } else if (style == 1) {
         // linear drop
-        return (width - dist) / width;
+        factor = (width - dist) / width;
     } else if (style == 2) {
         // linear decay, note the extra component to guarantee it smoothly transitions to zero
         float factor_at_width = 1 / width;
-        return width * (1 / dist - factor_at_width);
+        factor = width * (1 / dist - factor_at_width);
     } else if (style == 3) {
         // quadratic decay
         float factor_at_width = 1 / (width * width);
-        return width * (1 / dist_sq - factor_at_width);
+        factor = width * (1 / dist_sq - factor_at_width);
     } else if (style == 4) {
         // quintic decay
         float factor_at_width = 1 / (width * width * width * width);
-        return width * (1 / (dist_sq * dist_sq) - factor_at_width);
+        factor = width * (1 / (dist_sq * dist_sq) - factor_at_width);
     } else {
-        return -1;
+        return vec2(-1, -1);
     }
-}
 
-vec3 determine_line_color(line line_data, float dist_sq) {
-    float factor = determine_factor(line_data.style, dist_sq, line_data.width);
-    float aa_factor = clamp((line_data.width - sqrt(dist_sq)), 0, 1);
-    return line_data.color.rgb * factor * aa_factor;
+    float aa_factor = clamp((width - dist), 0, 1);
+    return vec2(factor * aa_factor);
 }
 
 void main() {
@@ -199,8 +200,16 @@ void main() {
     for(uint index = 0; index < num; index += 1) {
         line line_data = extract_line(tile, index);
         float dist = line_segment_distance_square(line_data.p0, line_data.p1, pixel_pos);
-        vec3 result = determine_line_color(line_data, dist);
-        color += vec4(result * line_data.color.a, line_data.color.a);
+        vec2 factor = determine_factor(line_data.style, dist, line_data.width);
+        if(line_data.mode == 0) {
+            color += vec4(line_data.color.rgb * factor[0] * line_data.color.a,  factor[0] * line_data.color.a);
+        } else if(line_data.mode == 1) {
+            if(factor[0] > 0) {
+                color = mix(color, vec4(line_data.color.rgb * factor[0], factor[0]), line_data.color.a * factor[1] * clamp(factor[0], 0, 1));
+            }
+        } else {
+            color = vec4(1, 0, 1, 1);
+        }
     }
     color = vec4(xyz_to_srgb(color.rgb), 1);
 }
