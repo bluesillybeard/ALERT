@@ -205,7 +205,7 @@ void main() {
             color += vec4(line_data.color.rgb * factor[0] * line_data.color.a,  factor[0] * line_data.color.a);
         } else if(line_data.mode == 1) {
             if(factor[0] > 0) {
-                color = mix(color, vec4(line_data.color.rgb * factor[0], factor[0]), line_data.color.a * factor[1] * clamp(factor[0], 0, 1));
+                color = mix(color, vec4(line_data.color.rgb * factor[0], factor[0]), clamp(line_data.color.a * factor[1] * factor[0], 0, 1));
             }
         } else {
             color = vec4(1, 0, 1, 1);
