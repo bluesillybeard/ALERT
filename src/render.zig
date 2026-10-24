@@ -223,7 +223,30 @@ pub const Renderer = struct {
     pub fn frame(this: *Renderer, allocator: std.mem.Allocator, temp_alloc: std.mem.Allocator) !void {
         _ = allocator;
         const window_size = this.window.getSize();
-        gl.viewport(0, 0, window_size[0], window_size[1]);
+        const window_width: f32 = @floatFromInt(window_size[0]);
+        const window_height: f32 = @floatFromInt(window_size[1]);
+
+        // Figure out the window size
+        // Basically we need to reframe 1920x1080 into the size of the window while keeping the aspect ratio
+        const ratio_x = window_width / 1920.0;
+        const ratio_y = window_height / 1080.0;
+        const scale = @min(ratio_x, ratio_y);
+        
+        // Set the viewport to clip everything outside the aspect ratio
+        const new_width = scale * 1920;
+        const new_height = scale * 1080;
+        const offset_x = (window_width - new_width)/2;
+        const offset_y = (window_height - new_height)/2;
+        gl.viewport(@intFromFloat(offset_x), @intFromFloat(offset_y), @intFromFloat(new_width), @intFromFloat(new_height));
+
+        // move all of the lines
+        for(this.lines.items) |*line| {
+            line.start.x = @intFromFloat(line.start.x * scale + offset_x);
+            line.start.y = @intFromFloat(line.start.y * scale + offset_y);
+            line.end.x = @intFromFloat(line.end.x * scale + offset_x);
+            line.end.y = @intFromFloat(line.end.y * scale + offset_y);
+            line.width = @intFromFloat(line.width * scale);
+        }
 
         // Upload new lines
         gl.bindBuffer(gl.SHADER_STORAGE_BUFFER, this.lines_buffer_id);
