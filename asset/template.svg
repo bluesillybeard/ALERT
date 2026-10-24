@@ -1,0 +1,289 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="1920"
+   height="1080"
+   viewBox="0 0 1920 1080"
+   version="1.1"
+   id="svg1"
+   inkscape:version="1.4.4 (dcaf3e7d9e, 2026-05-05)"
+   sodipodi:docname="template.svg"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview1"
+     pagecolor="#ffffff"
+     bordercolor="#000000"
+     borderopacity="0.25"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     inkscape:document-units="mm"
+     inkscape:zoom="0.54698373"
+     inkscape:cx="824.52179"
+     inkscape:cy="681.92157"
+     inkscape:window-width="2560"
+     inkscape:window-height="1368"
+     inkscape:window-x="0"
+     inkscape:window-y="0"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="layer6" />
+  <defs
+     id="defs1">
+    <rect
+       x="797.09867"
+       y="883.02444"
+       width="619.7625"
+       height="53.018031"
+       id="rect36" />
+  </defs>
+  <g
+     inkscape:groupmode="layer"
+     id="layer7"
+     inkscape:label="00:10:00"
+     style="display:none">
+    <text
+       xml:space="preserve"
+       style="font-size:26.6667px;font-family:'Adwaita Sans';-inkscape-font-specification:'Adwaita Sans';writing-mode:lr-tb;direction:ltr;fill:#000000;stroke:none;stroke-width:40;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:none"
+       x="275.07291"
+       y="918.65106"
+       id="text30-3"
+       inkscape:label="IGNORE: information 3"><tspan
+         sodipodi:role="line"
+         x="275.07291"
+         y="918.65106"
+         id="tspan31">This last frame is here at 10 seconds to serve as the &quot;final&quot; frame of the animation so</tspan><tspan
+         sodipodi:role="line"
+         x="275.07291"
+         y="951.98444"
+         id="tspan32">ALERT knows to keep this open for 10 full seconds instead of stopping at one second.</tspan></text>
+  </g>
+  <g
+     inkscape:groupmode="layer"
+     id="layer6"
+     inkscape:label="00:01:00"
+     style="display:none">
+    <path
+       style="fill:none;stroke:#000000;stroke-width:40;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:none"
+       d="m 1026.8032,280.96182 v 205.43373 h 72.2142"
+       id="path18"
+       sodipodi:nodetypes="ccc"
+       inkscape:label="S FFFFFFFF B 020 99 LMAIN" />
+    <path
+       style="fill:none;stroke:#000000;stroke-width:40;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:none"
+       d="m 1155.0616,486.17816 39.8493,-225.99659 130.4792,225.99659"
+       id="path25"
+       inkscape:label="S FFFFFFFF B 020 99 AMAIN" />
+    <path
+       style="fill:none;stroke:#000000;stroke-width:40;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:none"
+       d="m 1270.2829,390.72976 -96.8964,-8.47733"
+       id="path26"
+       inkscape:label="S FFFFFFFF B 020 99 AMID" />
+    <path
+       style="fill:none;stroke:#000000;stroke-width:40;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:none"
+       d="M 1457.0817,486.17816 V 275.1453 h -93.2386"
+       id="path27"
+       inkscape:label="S FFFFFFFF B 020 99 TMID2" />
+    <path
+       style="fill:none;stroke:#000000;stroke-width:40;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:none"
+       d="m 1457.0817,275.1453 h 110.6066"
+       id="path28"
+       inkscape:label="S FFFFFFFF B 020 99 TTOP2" />
+    <path
+       style="fill:none;stroke:#000000;stroke-width:40;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:none"
+       d="M 1820.2738,486.17816 H 1672.1783 V 263.26195 h 145.3425"
+       id="path29"
+       inkscape:label="S FFFFFFFF B 020 99 EMAIN2" />
+    <path
+       style="fill:none;stroke:#000000;stroke-width:40;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:none"
+       d="m 1672.1783,374.72005 150.8271,10e-6"
+       id="path30"
+       inkscape:label="S FFFFFFFF B 020 99 EMID2" />
+    <text
+       xml:space="preserve"
+       style="font-size:26.6667px;font-family:'Adwaita Sans';-inkscape-font-specification:'Adwaita Sans';writing-mode:lr-tb;direction:ltr;fill:#000000;stroke:none;stroke-width:40;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:none"
+       x="844.15808"
+       y="841.57257"
+       id="text30"
+       inkscape:label="IGNORE: information 2"><tspan
+         sodipodi:role="line"
+         id="tspan30"
+         x="844.15808"
+         y="841.57257">For testing purposes I could not be bothered to animate the rest of the word |:</tspan></text>
+    <path
+       style="fill:none;stroke:#808080;stroke-width:40;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:none"
+       d="m 868.07373,787.92396 128.62746,-255.3158 838.98711,7.75643"
+       id="path31"
+       sodipodi:nodetypes="ccc"
+       inkscape:label="IGNORE: leader" />
+  </g>
+  <g
+     inkscape:groupmode="layer"
+     id="layer5"
+     inkscape:label="00:00:45"
+     style="display:none">
+    <path
+       style="fill:none;stroke:#000000;stroke-width:40;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:none"
+       d="m 826.96117,484 0.8995,-204.62306 82.1394,25.26671 -2.8362,65.19114 -79.9878,16.17288"
+       id="path16"
+       inkscape:label="S FFFFFFFF B 020 99 PMAIN"
+       sodipodi:nodetypes="ccccc" />
+  </g>
+  <g
+     inkscape:groupmode="layer"
+     id="g17"
+     inkscape:label="00:00:30"
+     style="display:none">
+    <path
+       style="fill:none;stroke:#000000;stroke-width:40;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:none"
+       d="m 465.26446,483.37434 80.42644,-198.96982 46.78099,81.02705 51.55301,-83.29243 93.72386,201.50418"
+       id="path17"
+       inkscape:label="S FFFFFFFF B 020 99 MMAIN"
+       sodipodi:nodetypes="ccccc" />
+  </g>
+  <g
+     inkscape:groupmode="layer"
+     id="layer3"
+     inkscape:label="00:00:15"
+     style="display:none">
+    <path
+       style="fill:none;stroke:#000000;stroke-width:40;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:none"
+       d="M 413.20357,295.35174 H 272.94147 V 484.43343 H 402.21529"
+       id="path13"
+       inkscape:label="S FFFFFFFF B 020 99 EMAIN"
+       sodipodi:nodetypes="cccc" />
+    <path
+       style="fill:none;stroke:#000000;stroke-width:40;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:none"
+       d="m 272.94147,394.89258 138.32299,10e-6"
+       id="path14"
+       inkscape:label="S FFFFFFFF B 020 99 EMID"
+       sodipodi:nodetypes="cc" />
+  </g>
+  <g
+     inkscape:groupmode="layer"
+     id="layer2"
+     inkscape:label="00:00:00.start"
+     style="display:none">
+    <path
+       style="fill:#000000;stroke:#000000;stroke-width:40;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:none"
+       d="M 146.75357,299.70095 V 486.17816"
+       id="path11"
+       inkscape:label="S FFFFFFFF B 020 99 TMID" />
+    <path
+       style="fill:#000000;stroke:#000000;stroke-width:40;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:none"
+       d="M 89.279281,299.70095 H 204.22786"
+       id="path12"
+       inkscape:label="S FFFFFFFF B 020 99 TTOP" />
+    <text
+       xml:space="preserve"
+       style="font-size:26.6667px;font-family:'Adwaita Sans';-inkscape-font-specification:'Adwaita Sans';writing-mode:lr-tb;direction:ltr;fill:#000000;stroke:none;stroke-width:40;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:none"
+       x="94.306854"
+       y="142.01799"
+       id="text12"
+       inkscape:label="IGNORE: information"><tspan
+         sodipodi:role="line"
+         id="tspan12"
+         x="94.306854"
+         y="142.01799">We have given both of these lines non-empty IDs so they will be &quot;interpolated&quot; to the end of this file</tspan><tspan
+         sodipodi:role="line"
+         x="94.306854"
+         y="175.35136"
+         id="tspan13">They don't show up in any future frames/layers so they will not move - the animator has that edge case handled</tspan></text>
+    <path
+       style="fill:none;stroke:#000000;stroke-width:5;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:none"
+       d="m 141.38321,218.11717 v 49.81866 l -15.53523,-10.87788 14.64571,10.25504 14.4679,-8.35305"
+       id="path15"
+       inkscape:label="IGNORE: arrow" />
+  </g>
+  <g
+     inkscape:label="IGNORE: description"
+     inkscape:groupmode="layer"
+     id="layer1"
+     style="display:inline">
+    <text
+       xml:space="preserve"
+       style="font-size:47.509px;font-family:'Adwaita Sans';-inkscape-font-specification:'Adwaita Sans';writing-mode:lr-tb;direction:ltr;fill:#000000;stroke:none;stroke-width:3.36677;stroke-linejoin:round"
+       x="65.922874"
+       y="109.29647"
+       id="text1"
+       inkscape:label="description"><tspan
+         sodipodi:role="line"
+         id="tspan1"
+         style="fill:#000000;stroke:none;stroke-width:3.36677"
+         x="65.922874"
+         y="109.29647">This is the ALERT template file</tspan><tspan
+         sodipodi:role="line"
+         style="fill:#000000;stroke:none;stroke-width:3.36677"
+         x="65.922874"
+         y="168.68272"
+         id="tspan2">Open with Inkscape, read the description at the top of svgimport.zig, and get animating!</tspan><tspan
+         sodipodi:role="line"
+         style="fill:#000000;stroke:none;stroke-width:3.36677"
+         x="65.922874"
+         y="228.06897"
+         id="tspan3">Good luck! Inkscape was not made for this.</tspan><tspan
+         sodipodi:role="line"
+         style="fill:#000000;stroke:none;stroke-width:3.36677"
+         x="65.922874"
+         y="287.45523"
+         id="tspan4" /><tspan
+         sodipodi:role="line"
+         style="fill:#000000;stroke:none;stroke-width:3.36677"
+         x="65.922874"
+         y="346.84146"
+         id="tspan5">Notes:</tspan><tspan
+         sodipodi:role="line"
+         style="fill:#000000;stroke:none;stroke-width:3.36677"
+         x="65.922874"
+         y="406.22772"
+         id="tspan6">- DO NOT change the document size, ALERT expects coordinates in 1920x1080</tspan><tspan
+         sodipodi:role="line"
+         style="fill:#000000;stroke:none;stroke-width:3.36677"
+         x="65.922874"
+         y="465.61395"
+         id="tspan33">   even if it supports any 16x9 resolution</tspan><tspan
+         sodipodi:role="line"
+         style="fill:#000000;stroke:none;stroke-width:3.36677"
+         x="65.922874"
+         y="525.00018"
+         id="tspan7">- DO NOT add pages</tspan><tspan
+         sodipodi:role="line"
+         style="fill:#000000;stroke:none;stroke-width:3.36677"
+         x="65.922874"
+         y="584.38647"
+         id="tspan8">- DO NOT expect anything other than straight line paths to work</tspan><tspan
+         sodipodi:role="line"
+         style="fill:#000000;stroke:none;stroke-width:3.36677"
+         x="65.922874"
+         y="643.77271"
+         id="tspan9">- DO NOT expect fills to work</tspan><tspan
+         sodipodi:role="line"
+         style="fill:#000000;stroke:none;stroke-width:3.36677"
+         x="65.922874"
+         y="703.15894"
+         id="tspan11">- DO NOT change the document units or scale factor</tspan><tspan
+         sodipodi:role="line"
+         style="fill:#000000;stroke:none;stroke-width:3.36677"
+         x="65.922874"
+         y="762.54523"
+         id="tspan39">- DO NOT end a paths interpolation ID with R</tspan><tspan
+         sodipodi:role="line"
+         style="fill:#000000;stroke:none;stroke-width:3.36677"
+         x="65.922874"
+         y="821.93146"
+         id="tspan41">- DO NOT change the number of nodes when using interpolation</tspan><tspan
+         sodipodi:role="line"
+         style="fill:#000000;stroke:none;stroke-width:3.36677"
+         x="65.922874"
+         y="881.31769"
+         id="tspan36">- DO look at some of the examples</tspan></text>
+    <text
+       xml:space="preserve"
+       id="text36"
+       style="font-size:26.6667px;font-family:'Adwaita Sans';-inkscape-font-specification:'Adwaita Sans';writing-mode:lr-tb;direction:ltr;white-space:pre;shape-inside:url(#rect36);display:inline;fill:none;stroke:#808080;stroke-width:40;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:none" />
+  </g>
+</svg>

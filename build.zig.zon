@@ -12,6 +12,10 @@
             .url = "https://github.com/zig-gamedev/zopengl/archive/eda87248c6fa190fbb5fe78fc84c5e28d6b2032e.tar.gz",
             .hash = "zopengl-0.6.0-dev-5-tnz8mnDgCHR72YtUpLBYW_u4JgZ0Ub-UFX-M0zRSG1",
         },
+        .xml = .{
+            .url = "https://github.com/ianprime0509/zig-xml/archive/4beab29d68ab308af4bd12a4fc4187c24fdad0d6.tar.gz",
+            .hash = "xml-0.2.2-ZTbP35N4AgAN3HBgWmBp_LAQ0MIPKW17GAGMwx4DHGYK",
+        },
     },
     .paths = .{
         "build.zig",

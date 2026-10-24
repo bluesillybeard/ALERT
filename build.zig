@@ -30,6 +30,12 @@ pub fn build(b: *std.Build) void {
     });
     exe.root_module.addImport("opengl", zopengl.module("root"));
 
+    const zig_xml = b.dependency("xml", .{
+        .optimize = optimize,
+        .target = target,
+    });
+    exe.root_module.addImport("xml", zig_xml.module("xml"));
+
     const run_step = b.step("run", "Run the app");
 
     const run_cmd = b.addRunArtifact(exe);
