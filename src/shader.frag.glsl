@@ -96,7 +96,7 @@ struct line {
 };
 
 uint calculate_tile_index(vec2 pixel_pos) {
-    uint tid = uint(pixel_pos.x) / 16 + num_x_tiles * (uint(pixel_pos.y) / 16);
+    uint tid = uint(pixel_pos.x) / 64 + num_x_tiles * (uint(pixel_pos.y) / 64);
     return tile_index_buffer[tid];
 }
 

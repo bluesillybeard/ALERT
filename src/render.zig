@@ -3,7 +3,7 @@
 const MAX_LINES = 10000;
 
 // The spatial partitioning tiles are NxN pixels in size
-const TILE_SIZE = 16;
+const TILE_SIZE = 64;
 
 // The maximum distance a line may be to still be included in the
 const TILE_MARGIN = @as(comptime_float, TILE_SIZE) / 2.0 * @sqrt(2.0);
