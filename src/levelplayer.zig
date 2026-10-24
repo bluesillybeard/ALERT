@@ -54,20 +54,23 @@ pub const LevelPlayer = struct {
         var active_references = std.ArrayList(ActiveInterpolation).empty;
         var lines_iterator = this.interp_lines.valueIterator();
         while (lines_iterator.next()) |line| {
-            var start_ref_index: ?usize = null;
+            var start_ref_index: usize = undefined;
             // find the first reference whose timestamp is greater than or equal to ours
             const end_ref_index = std.sort.partitionPoint(LineRef, line.frames_referenced.items, CompareLinerefTimestamp{ .timestamp = timestamp, .parent = this }, CompareLinerefTimestamp.compare);
-            var ref_index = end_ref_index;
-            while (ref_index > 0) {
-                ref_index -= 1;
-                start_ref_index = ref_index;
+            if (end_ref_index > 0) {
+                start_ref_index = end_ref_index - 1;
+            } else {
+                start_ref_index = end_ref_index;
+            }
+            if (this.level.frames[line.frames_referenced.items[start_ref_index].frame_index].timestamp > timestamp) {
+                continue;
             }
 
-            if (start_ref_index) |index| {
+            if (start_ref_index != end_ref_index) {
                 if (end_ref_index == line.frames_referenced.items.len) {
-                    try active_references.append(this.frame_data_arena.allocator(), .{ .start = line.frames_referenced.items[index], .end = line.frames_referenced.items[end_ref_index - 1] });
+                    try active_references.append(this.frame_data_arena.allocator(), .{ .start = line.frames_referenced.items[start_ref_index], .end = line.frames_referenced.items[end_ref_index - 1] });
                 } else {
-                    try active_references.append(this.frame_data_arena.allocator(), .{ .start = line.frames_referenced.items[index], .end = line.frames_referenced.items[end_ref_index] });
+                    try active_references.append(this.frame_data_arena.allocator(), .{ .start = line.frames_referenced.items[start_ref_index], .end = line.frames_referenced.items[end_ref_index] });
                 }
             } else {
                 try active_references.append(this.frame_data_arena.allocator(), .{ .start = line.frames_referenced.items[end_ref_index], .end = null });
@@ -78,12 +81,14 @@ pub const LevelPlayer = struct {
         var lines = std.ArrayList(svgimport.LevelLine).empty;
 
         // render out non-interpolated lines
-        try lines.appendSlice(this.frame_data_arena.allocator(), this.level.frames[frame_index].lines);
+        for (this.level.frames[frame_index].lines) |polyline| {
+            try lines.appendSlice(this.frame_data_arena.allocator(), polyline.lines);
+        }
 
         // render out interpolated lines
         // TODO: actually interpolate
         for (active_references.items) |ref| {
-            try lines.append(this.frame_data_arena.allocator(), this.level.frames[ref.start.frame_index].lines[ref.start.line_index]);
+            try lines.appendSlice(this.frame_data_arena.allocator(), this.level.frames[ref.start.frame_index].lines[ref.start.line_index].lines);
         }
 
         return .{

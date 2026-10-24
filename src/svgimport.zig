@@ -49,26 +49,30 @@ pub const LevelLine = struct {
     style: LineStyle,
     width: u8,
     width_percent: f32,
+};
+
+pub const LevelPath = struct {
+    lines: []LevelLine,
     // You have to be insane to have an ID longer than 32 characters.
     id: [50]u8,
-    /// TODO: we also need a value for interpolate_end so we can delete lines during animation
-    interpolate_reset: bool,
     // We store this for debugging purposes
     name: [50]u8,
+    /// TODO: we also need a value for interpolate_end so we can delete lines during animation
+    interpolate_reset: bool,
 };
 
 pub const LevelFrame = struct {
     // timestamp in 60fps frames after the start of the level
     timestamp: u64,
     // Allocated using the allocator for the overall level
-    lines: []LevelLine,
+    lines: []LevelPath,
 };
 
 pub const InProgressLevelFrame = struct {
     // timestamp in 60fps frames after the start of the level
     timestamp: u64,
     // Allocated temporarily
-    lines: std.ArrayList(LevelLine),
+    lines: std.ArrayList(LevelPath),
 };
 
 pub const ImportedLevel = struct {
@@ -348,11 +352,11 @@ pub const ImportedLevel = struct {
                         }
                         poly.runSvgCommand(command, args_so_far[0..nargs]);
 
-                        for (poly.segments.items) |segment| {
+                        const poly_lines = try this.arena.allocator().alloc(LevelLine, poly.segments.items.len);
+
+                        for (poly.segments.items, 0..) |segment, line_index| {
                             const start = poly.points.items[segment.a];
                             const end = poly.points.items[segment.b];
-                            var id = [_]u8{0} ** 50;
-                            var name = [_]u8{0} ** 50;
                             if (line_properties.interp_id.len >= 50) {
                                 std.log.err("failed to parse svg file {s}: Interpolation ID {s} is too long", .{ path, line_properties.interp_id });
                                 return error.MalformedLine;
@@ -361,11 +365,7 @@ pub const ImportedLevel = struct {
                                 std.log.err("failed to parse svg file {s}: Interpolation ID {s} is too long", .{ path, line_properties.interp_id });
                                 return error.MalformedLine;
                             }
-                            @memcpy((&id)[0..line_properties.interp_id.len], line_properties.interp_id);
-                            id[line_properties.interp_id.len] = 0;
-                            @memcpy((&name)[0..line_properties.name.len], line_properties.name);
-                            name[line_properties.name.len] = 0;
-                            try frames.items[frames.items.len - 1].lines.append(import_arena.allocator(), LevelLine{
+                            poly_lines[line_index] = LevelLine{
                                 .T = line_properties.line_type,
                                 .x0 = @floatCast(start.x),
                                 .y0 = @floatCast(1080 - start.y),
@@ -380,11 +380,22 @@ pub const ImportedLevel = struct {
                                 .style = line_properties.style,
                                 .width = line_properties.width,
                                 .width_percent = line_properties.width_percent / 100,
-                                .id = id,
-                                .interpolate_reset = line_properties.interp_reset,
-                                .name = name,
-                            });
+                            };
                         }
+
+                        var id = [_]u8{0} ** 50;
+                        var name = [_]u8{0} ** 50;
+                        @memcpy((&id)[0..line_properties.interp_id.len], line_properties.interp_id);
+                        id[line_properties.interp_id.len] = 0;
+                        @memcpy((&name)[0..line_properties.name.len], line_properties.name);
+                        name[line_properties.name.len] = 0;
+
+                        try frames.items[frames.items.len - 1].lines.append(import_arena.allocator(), .{
+                            .lines = poly_lines,
+                            .id = id,
+                            .interpolate_reset = line_properties.interp_reset,
+                            .name = name,
+                        });
                         // End path handling
                     }
                 },
@@ -419,7 +430,7 @@ pub const ImportedLevel = struct {
         for (frames.items) |frame| {
             try finished_frames.append(import_arena.allocator(), .{
                 .timestamp = frame.timestamp,
-                .lines = try this.arena.allocator().dupe(LevelLine, frame.lines.items),
+                .lines = try this.arena.allocator().dupe(LevelPath, frame.lines.items),
             });
         }
         this.frames = try this.arena.allocator().dupe(LevelFrame, finished_frames.items);

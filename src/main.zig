@@ -25,7 +25,6 @@ pub fn main(init: std.process.Init) !void {
     while (!renderer.window.shouldClose()) {
         const frame = try player.generateFrame(playback_frame);
 
-        // Draw everything from all the frames cause yeah
         for (frame.lines) |line| {
             try renderer.drawLine(.{
                 .color = line.color,
