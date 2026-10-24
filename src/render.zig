@@ -245,7 +245,7 @@ pub const Renderer = struct {
             line.start.y = @intFromFloat(line.start.y * scale + offset_y);
             line.end.x = @intFromFloat(line.end.x * scale + offset_x);
             line.end.y = @intFromFloat(line.end.y * scale + offset_y);
-            line.width = @intFromFloat(line.width * scale);
+            line.width = @max(@as(u8, @intFromFloat(line.width * scale)), 2);
         }
 
         // Upload new lines
