@@ -97,8 +97,6 @@ pub const ImportedLevel = struct {
         defer streaming_reader.deinit();
         const reader = &streaming_reader.interface;
 
-
-
         // PARSER STATE
         // If we are in a layer, what is the name of that layer. If we are not in a layer, NULL
         var layer_name: ?[]const u8 = null;
@@ -301,6 +299,7 @@ pub const ImportedLevel = struct {
                                 }
                                 if(command != 0) {
                                     poly.runSvgCommand(command, args_so_far[0..nargs]);
+                                    nargs = 0;
                                 }
                                 command = token[0];
                             } else {
@@ -315,6 +314,7 @@ pub const ImportedLevel = struct {
                                 args_so_far[nargs] = arg;
                                 nargs += 1;
                             }
+                            poly.runSvgCommand(command, args_so_far[0..nargs]);
                         }
 
                         for(poly.segments.items) |segment| {
@@ -337,9 +337,9 @@ pub const ImportedLevel = struct {
                             try frames.items[frames.items.len-1].lines.append(import_arena.allocator(), LevelLine{
                                 .T = line_properties.line_type,
                                 .x0 = @floatCast(start.x),
-                                .y0 = @floatCast(start.y),
+                                .y0 = @floatCast(1080 - start.y),
                                 .x1 = @floatCast(end.x),
-                                .y1 = @floatCast(end.y),
+                                .y1 = @floatCast(1080 - end.y),
                                 .color = .{
                                     .r = line_properties.red,
                                     .g = line_properties.green,
