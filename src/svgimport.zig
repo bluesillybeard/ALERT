@@ -314,8 +314,8 @@ pub const ImportedLevel = struct {
                                 args_so_far[nargs] = arg;
                                 nargs += 1;
                             }
-                            poly.runSvgCommand(command, args_so_far[0..nargs]);
                         }
+                        poly.runSvgCommand(command, args_so_far[0..nargs]);
 
                         for (poly.segments.items) |segment| {
                             const start = poly.points.items[segment.a];

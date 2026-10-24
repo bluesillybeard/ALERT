@@ -1,7 +1,6 @@
 // IMPORTANT: this is a pile of crap I wrote in 2024 for a project to turn SVG files into triangle meshes
 // That project is still ongoing in 2026 believe it or not, but this code was abandoned back then since I ended up creating an Inkscape extension instead
-// Anyways I necromanced this code for this game jam thing, hopefully it works well enough.
-// It did need some adjustment due to changes from the last two years of Zig evolving as a language.
+// Anyways I necromanced this code for this game jam thing, turns out I never finished it and it needed some fixes
 
 // Structures for 2D geometry data (polygons and meshes)
 
@@ -56,24 +55,25 @@ pub const PolygonBuilder = struct {
                 this.penPos = this.points.items.len - 1;
             },
             'm' => {
-                if (params.len < 2) {
+                if (params.len % 2 != 0) {
                     std.log.warn("Skipping command {c} {any} due to too few arguments", .{ command, params });
                     return;
                 }
-                if (this.penPos) |pen| {
-                    const penPosPoint = this.points.items[pen];
-                    this.points.append(this.allocator, .{
-                        .x = params[0] + penPosPoint.x,
-                        .y = params[1] + penPosPoint.y,
-                    }) catch unreachable;
-                } else {
-                    this.points.append(this.allocator, .{
-                        .x = params[0],
-                        .y = params[1],
-                    }) catch unreachable;
+                for(0..params.len/2) |i| {
+                    const point = params[i*2..i*2+2];
+                    std.log.info("m command point {},{}", .{point[0], point[1]});
+                    if (this.penPos) |pen| {
+                        const penPosPoint = this.points.items[pen];
+                        this.addSegment(.{.x =point[0] + penPosPoint.x, .y =point[1] + penPosPoint.y});
+                    } else {
+                        this.points.append(this.allocator, .{
+                            .x = point[0],
+                            .y = point[1],
+                        }) catch unreachable;
+                    }
+                    this.startPoint = this.points.items.len - 1;
+                    this.penPos = this.points.items.len - 1;
                 }
-                this.startPoint = this.points.items.len - 1;
-                this.penPos = this.points.items.len - 1;
             },
             'Z', 'z' => {
                 this.segments.append(this.allocator, .{ .a = this.penPos.?, .b = this.startPoint.? }) catch unreachable;
