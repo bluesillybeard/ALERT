@@ -109,53 +109,53 @@ pub const ImportedLevel = struct {
 
         var frames: std.ArrayList(InProgressLevelFrame) = .empty;
 
-        NODE_LOOP: while(iteration_limit > 0) {
+        NODE_LOOP: while (iteration_limit > 0) {
             iteration_limit -= 1;
             const node = reader.read() catch |e| {
-                if(e == error.MalformedXml) {
+                if (e == error.MalformedXml) {
                     const loc = reader.errorLocation();
-                    std.log.err("Failed to parse SVG file {s} at {}:{}: {}", .{path, loc.line, loc.column, reader.errorCode()});
+                    std.log.err("Failed to parse SVG file {s} at {}:{}: {}", .{ path, loc.line, loc.column, reader.errorCode() });
                 } else {
-                    std.log.err("Failed to parse SVG file {s}: {}", .{path, e});
+                    std.log.err("Failed to parse SVG file {s}: {}", .{ path, e });
                 }
                 return e;
             };
-            NODE_SWITCH: switch(node) {
+            NODE_SWITCH: switch (node) {
                 .eof => break :NODE_LOOP,
                 .xml_declaration, .comment, .text, .entity_reference => {},
                 .element_start => {
                     depth += 1;
                     const element_type = reader.elementName();
-                    if(ignore_depth) |some_ignore_depth| {
-                        if(some_ignore_depth < depth) {
+                    if (ignore_depth) |some_ignore_depth| {
+                        if (some_ignore_depth < depth) {
                             break :NODE_SWITCH;
                         }
                     }
-                    if(std.mem.eql(u8, element_type, "g")) {
+                    if (std.mem.eql(u8, element_type, "g")) {
                         // Group
                         var is_layer: bool = false;
                         // For whatever reason Inkscape stores the name of nodes completely differently from how the svg standard assumes.
                         var inkscape_label: ?[]const u8 = null;
 
-                        for(0..reader.attributeCount()) |attr_index| {
+                        for (0..reader.attributeCount()) |attr_index| {
                             const attr_name = reader.attributeName(attr_index);
                             const attr_value = try reader.attributeValue(attr_index);
 
-                            if(std.mem.eql(u8, attr_name, "inkscape:label")) {
+                            if (std.mem.eql(u8, attr_name, "inkscape:label")) {
                                 inkscape_label = try import_arena.allocator().dupe(u8, attr_value);
-                            } else if(std.mem.eql(u8, attr_name, "inkscape:groupmode")) {
-                                if(std.mem.eql(u8, attr_value, "layer")) {
+                            } else if (std.mem.eql(u8, attr_name, "inkscape:groupmode")) {
+                                if (std.mem.eql(u8, attr_value, "layer")) {
                                     is_layer = true;
                                 }
                             }
                         }
 
-                        if(inkscape_label == null or std.mem.startsWith(u8, inkscape_label.?, "IGNORE")) {
+                        if (inkscape_label == null or std.mem.startsWith(u8, inkscape_label.?, "IGNORE")) {
                             ignore_depth = depth;
                             break :NODE_SWITCH;
                         }
 
-                        if(is_layer) {
+                        if (is_layer) {
                             layer_name = inkscape_label;
                             layer_depth = depth;
                             try frames.append(import_arena.allocator(), .{
@@ -165,30 +165,30 @@ pub const ImportedLevel = struct {
                             });
                         }
                         // End group handling
-                    } else if(std.mem.eql(u8, element_type, "path")) {
+                    } else if (std.mem.eql(u8, element_type, "path")) {
                         // Path
                         var inkscape_label: ?[]const u8 = null;
                         var path_code: ?[]const u8 = null;
-                        for(0..reader.attributeCount()) |attr_index| {
+                        for (0..reader.attributeCount()) |attr_index| {
                             const attr_name = reader.attributeName(attr_index);
                             const attr_value = try reader.attributeValue(attr_index);
 
-                            if(std.mem.eql(u8, attr_name, "inkscape:label")) {
+                            if (std.mem.eql(u8, attr_name, "inkscape:label")) {
                                 inkscape_label = try import_arena.allocator().dupe(u8, attr_value);
-                            } else if(std.mem.eql(u8, attr_name, "d")) {
+                            } else if (std.mem.eql(u8, attr_name, "d")) {
                                 path_code = try import_arena.allocator().dupe(u8, attr_value);
                             }
                         }
-                        if(inkscape_label == null or std.mem.startsWith(u8, inkscape_label.?, "IGNORE")) {
+                        if (inkscape_label == null or std.mem.startsWith(u8, inkscape_label.?, "IGNORE")) {
                             break :NODE_SWITCH;
                         }
 
-                        if(path_code == null) {
+                        if (path_code == null) {
                             std.log.err("Failed to parse SVG file {s}: path node with no path code", .{path});
                             return error.MalformedSvg;
                         }
 
-                        if(inkscape_label == null) {
+                        if (inkscape_label == null) {
                             std.log.warn("Skipped node missing inkscape label", .{});
                             break :NODE_SWITCH;
                         }
@@ -198,11 +198,11 @@ pub const ImportedLevel = struct {
                             const end_index = std.mem.indexOf(u8, inkscape_label.?, ".") orelse inkscape_label.?.len;
                             var encoded: [15 + 50 + 1]u8 = undefined;
                             var nencoded: usize = 0;
-                            for(0..end_index) |i| {
+                            for (0..end_index) |i| {
                                 const c = inkscape_label.?[i];
-                                if(c != ' ') {
-                                    if(nencoded >= encoded.len) {
-                                        std.log.err("Failed to parse line in SVG file {s}: properties to long \"{s}\"", .{path, inkscape_label.?[0..end_index]});
+                                if (c != ' ') {
+                                    if (nencoded >= encoded.len) {
+                                        std.log.err("Failed to parse line in SVG file {s}: properties to long \"{s}\"", .{ path, inkscape_label.?[0..end_index] });
                                         return error.MalformedLine;
                                     }
                                     encoded[nencoded] = c;
@@ -210,66 +210,66 @@ pub const ImportedLevel = struct {
                                 }
                             }
 
-                            if(nencoded < 15) {
-                                std.log.err("failed to parse line in SVG file {s}: properties too short \"{s}\"", .{path, encoded[0..nencoded]});
+                            if (nencoded < 15) {
+                                std.log.err("failed to parse line in SVG file {s}: properties too short \"{s}\"", .{ path, encoded[0..nencoded] });
                             }
 
-                            const line_type = switch(encoded[0]) {
+                            const line_type = switch (encoded[0]) {
                                 'S' => LineType.solid,
                                 'E' => LineType.evil,
                                 'I' => LineType.ignore,
                                 else => {
-                                    std.log.err("failed to parse line in SVG file {s}: invalid line type {c}", .{path, encoded[0]});
+                                    std.log.err("failed to parse line in SVG file {s}: invalid line type {c}", .{ path, encoded[0] });
                                     return error.MalformedLine;
-                                }
+                                },
                             };
-                            
+
                             const red = std.fmt.parseInt(u8, encoded[1..3], 16) catch {
-                                std.log.err("failed to parse line in SVG file {s}: invalid color channel {s}", .{path, encoded[1..3]});
+                                std.log.err("failed to parse line in SVG file {s}: invalid color channel {s}", .{ path, encoded[1..3] });
                                 return error.MalformedLine;
                             };
 
                             const green = std.fmt.parseInt(u8, encoded[3..5], 16) catch {
-                                std.log.err("failed to parse line in SVG file {s}: invalid color channel {s}", .{path, encoded[1..3]});
+                                std.log.err("failed to parse line in SVG file {s}: invalid color channel {s}", .{ path, encoded[1..3] });
                                 return error.MalformedLine;
                             };
 
                             const blue = std.fmt.parseInt(u8, encoded[5..7], 16) catch {
-                                std.log.err("failed to parse line in SVG file {s}: invalid color channel {s}", .{path, encoded[1..3]});
+                                std.log.err("failed to parse line in SVG file {s}: invalid color channel {s}", .{ path, encoded[1..3] });
                                 return error.MalformedLine;
                             };
 
                             const alpha = std.fmt.parseInt(u8, encoded[7..9], 16) catch {
-                                std.log.err("failed to parse line in SVG file {s}: invalid color channel {s}", .{path, encoded[1..3]});
+                                std.log.err("failed to parse line in SVG file {s}: invalid color channel {s}", .{ path, encoded[1..3] });
                                 return error.MalformedLine;
                             };
 
-                            const style = switch(encoded[9]) {
+                            const style = switch (encoded[9]) {
                                 'B' => LineStyle.basic,
                                 'G' => LineStyle.glowing,
                                 'M' => LineStyle.blended,
                                 'L' => LineStyle.both,
                                 else => {
-                                    std.log.err("failed to parse line in SVG file {s}: invalid style {c}", .{path, encoded[9]});
+                                    std.log.err("failed to parse line in SVG file {s}: invalid style {c}", .{ path, encoded[9] });
                                     return error.MalformedLine;
-                                }
+                                },
                             };
 
                             const width = std.fmt.parseInt(u8, encoded[10..13], 10) catch {
-                                std.log.err("failed to parse line in SVG file {s}: invalid width {s}", .{path, encoded[10..14]});
+                                std.log.err("failed to parse line in SVG file {s}: invalid width {s}", .{ path, encoded[10..14] });
                                 return error.MalformedLine;
                             };
 
                             const width_percent = std.fmt.parseInt(u8, encoded[13..15], 10) catch {
-                                std.log.err("failed to parse line in SVG file {s}: invalid width percent {s}", .{path, encoded[14..16]});
+                                std.log.err("failed to parse line in SVG file {s}: invalid width percent {s}", .{ path, encoded[14..16] });
                                 return error.MalformedLine;
                             };
 
-                            const interp_reset = encoded[nencoded-1] == 'R';
+                            const interp_reset = encoded[nencoded - 1] == 'R';
 
                             var interp_id = try import_arena.allocator().dupe(u8, encoded[15..nencoded]);
-                            if(interp_reset) {
-                                interp_id = interp_id[0..interp_id.len-1];
+                            if (interp_reset) {
+                                interp_id = interp_id[0 .. interp_id.len - 1];
                             }
 
                             break :blk .{
@@ -290,24 +290,24 @@ pub const ImportedLevel = struct {
                         var poly = PolyBuilder.init(import_arena.allocator());
                         var path_tokens = std.mem.tokenizeAny(u8, path_code.?, " ,");
                         var command: u8 = 0;
-                        var args_so_far: [64] f64 = undefined;
+                        var args_so_far: [64]f64 = undefined;
                         var nargs: usize = 0;
-                        while(path_tokens.next()) |token| {
-                            if(std.mem.indexOfAny(u8, token, "MmZzLlHhVvCcSsQqTtAa")) |_| {
-                                if(token.len != 1) {
+                        while (path_tokens.next()) |token| {
+                            if (std.mem.indexOfAny(u8, token, "MmZzLlHhVvCcSsQqTtAa")) |_| {
+                                if (token.len != 1) {
                                     std.log.warn("Unusual SVG path command: {s}", .{token});
                                 }
-                                if(command != 0) {
+                                if (command != 0) {
                                     poly.runSvgCommand(command, args_so_far[0..nargs]);
                                     nargs = 0;
                                 }
                                 command = token[0];
                             } else {
                                 const arg = std.fmt.parseFloat(f32, token) catch {
-                                    std.log.err("Failed to parse SVG file {s}: {s} is not a valid float", .{path, token});
+                                    std.log.err("Failed to parse SVG file {s}: {s} is not a valid float", .{ path, token });
                                     return error.MalformedSvg;
                                 };
-                                if(nargs >= 64) {
+                                if (nargs >= 64) {
                                     std.log.err("Failed to parse SVG file {s}: too many args in SVG path command", .{path});
                                     return error.MalformedSvg;
                                 }
@@ -317,24 +317,24 @@ pub const ImportedLevel = struct {
                             poly.runSvgCommand(command, args_so_far[0..nargs]);
                         }
 
-                        for(poly.segments.items) |segment| {
+                        for (poly.segments.items) |segment| {
                             const start = poly.points.items[segment.a];
                             const end = poly.points.items[segment.b];
                             var id = [_]u8{0} ** 50;
                             var name = [_]u8{0} ** 50;
-                            if(line_properties.interp_id.len >= 50) {
-                                std.log.err("failed to parse svg file {s}: Interpolation ID {s} is too long", .{path, line_properties.interp_id});
+                            if (line_properties.interp_id.len >= 50) {
+                                std.log.err("failed to parse svg file {s}: Interpolation ID {s} is too long", .{ path, line_properties.interp_id });
                                 return error.MalformedLine;
                             }
-                            if(line_properties.name.len >= 50) {
-                                std.log.err("failed to parse svg file {s}: Interpolation ID {s} is too long", .{path, line_properties.interp_id});
+                            if (line_properties.name.len >= 50) {
+                                std.log.err("failed to parse svg file {s}: Interpolation ID {s} is too long", .{ path, line_properties.interp_id });
                                 return error.MalformedLine;
                             }
                             @memcpy((&id)[0..line_properties.interp_id.len], line_properties.interp_id);
                             id[line_properties.interp_id.len] = 0;
                             @memcpy((&name)[0..line_properties.name.len], line_properties.name);
                             name[line_properties.name.len] = 0;
-                            try frames.items[frames.items.len-1].lines.append(import_arena.allocator(), LevelLine{
+                            try frames.items[frames.items.len - 1].lines.append(import_arena.allocator(), LevelLine{
                                 .T = line_properties.line_type,
                                 .x0 = @floatCast(start.x),
                                 .y0 = @floatCast(1080 - start.y),
@@ -358,17 +358,17 @@ pub const ImportedLevel = struct {
                     }
                 },
                 .element_end => {
-                    if(depth == 0) {
+                    if (depth == 0) {
                         std.log.err("Failed to parse SVG file {s}: isolated element_end", .{path});
                         return error.MalformedXml;
                     }
-                    if(layer_name) |_| {
-                        if(layer_depth == depth) {
+                    if (layer_name) |_| {
+                        if (layer_depth == depth) {
                             layer_name = null;
                         }
                     }
-                    if(ignore_depth) |some_ignore_depth| {
-                        if(some_ignore_depth == depth) {
+                    if (ignore_depth) |some_ignore_depth| {
+                        if (some_ignore_depth == depth) {
                             ignore_depth = null;
                         }
                     }
@@ -376,16 +376,16 @@ pub const ImportedLevel = struct {
                 },
                 else => {
                     std.log.info("Element {}", .{node});
-                }
+                },
             }
         }
-        if(iteration_limit == 0) {
+        if (iteration_limit == 0) {
             std.log.err("Failed to parse SVG file: {s}: Reached iteration limit", .{path});
             return error.IterationLimit;
         }
 
         var finished_frames = std.ArrayList(LevelFrame).empty;
-        for(frames.items) |frame| {
+        for (frames.items) |frame| {
             try finished_frames.append(import_arena.allocator(), .{
                 .timestamp = frame.timestamp,
                 .lines = try this.arena.allocator().dupe(LevelLine, frame.lines.items),

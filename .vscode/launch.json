@@ -7,11 +7,22 @@
         {
             "type": "cppdbg",
             "request": "launch",
-            "name": "Launch",
+            "name": "Launch (gdb)",
             "program": "${workspaceFolder}/zig-out/bin/ALERT",
             "args": [],
             "cwd": "${workspaceFolder}",
+            "MIMode": "gdb",
+            "miDebuggerPath": "/usr/bin/gdb",
             "preLaunchTask": "build"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Launch (lldb)",
+            "program": "${workspaceFolder}/zig-out/bin/ALERT",
+            "args": [],
+            "preLaunchTask": "build",
+            "cwd": "${workspaceFolder}"
         }
     ]
 }

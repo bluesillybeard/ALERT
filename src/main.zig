@@ -18,15 +18,15 @@ pub fn main(init: std.process.Init) !void {
 
     while (!renderer.window.shouldClose()) {
         // Draw everything from all the frames cause yeah
-        for(level.frames) |frame| {
-            for(frame.lines) |line| {
+        for (level.frames) |frame| {
+            for (frame.lines) |line| {
                 try renderer.drawLine(.{
                     .color = line.color,
                     .style = .solid_color,
                     .blend_mode = .mix,
                     .width = line.width,
-                    .start = .{.x = @intFromFloat(line.x0), .y = @intFromFloat(line.y0)},
-                    .end = .{.x = @intFromFloat(line.x1), .y = @intFromFloat(line.y1)},
+                    .start = .{ .x = @intFromFloat(line.x0), .y = @intFromFloat(line.y0) },
+                    .end = .{ .x = @intFromFloat(line.x1), .y = @intFromFloat(line.y1) },
                 });
             }
         }
@@ -45,7 +45,7 @@ pub fn main(init: std.process.Init) !void {
             try renderer.drawLine(.{
                 .color = .{ .r = 150, .g = 25, .b = 25, .a = 250 },
                 .start = .{ .x = 50, .y = 200 + 80 * i },
-                .end = .{ .x = 750, .y = 50 + 80 * i},
+                .end = .{ .x = 750, .y = 50 + 80 * i },
                 .style = @enumFromInt(st.value),
                 .width = 40,
                 .blend_mode = .mix,
