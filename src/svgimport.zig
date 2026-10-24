@@ -3,7 +3,7 @@
 // - Each layer is treated as a frame, the name of that layer a timestamp in the form "mm:ss:ff"
 // - Naming Convention for objects: "T RRGGBBAA S WWW PP IIII R.name"
 //    - T -> One of S, E, I for Solid, Evil, Ignore
-//    - RRGGBBAA -> 16 digit hex color code (Yes, the SVG color is fully ignored) (only does anything for ignore lines as lines that effect the player have their own coloring)
+//    - RRGGBBAA -> 16 digit hex color code (Yes, the SVG color is fully ignored)
 //    - S -> one of B, G, M, L for Simple, Glowing, mBlended, gLowing&bLended
 //    - WWW -> width of the line in decimal half-pixels
 //    - PP -> Percent of the line's width to be considered a hitbox for player collision

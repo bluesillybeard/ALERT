@@ -21,15 +21,45 @@ pub fn main(init: std.process.Init) !void {
     try player.load(&level, init.gpa);
     defer player.deinit();
 
+    var reload_key_was_down: bool = false;
     var playback_frame: u64 = 0;
     while (!renderer.window.shouldClose()) {
+        if (!reload_key_was_down and renderer.window.getKey(.h) == .press) {
+            std.log.info("Reloading {s}", .{"asset/template.svg"});
+            player.deinit();
+            level.deinit();
+            try level.init("asset/template.svg", init.io, init.gpa);
+            try player.load(&level, init.gpa);
+        }
+        reload_key_was_down = renderer.window.getKey(.h) == .press;
+
         const frame = try player.generateFrame(playback_frame);
 
         for (frame.lines) |line| {
+            var style: render.LineStyle = undefined;
+            var mode: render.BlendMode = undefined;
+            switch (line.style) {
+                .basic => {
+                    style = .solid_color;
+                    mode = .add;
+                },
+                .blended => {
+                    style = .solid_color;
+                    mode = .mix;
+                },
+                .glowing => {
+                    style = .decay_quadratic;
+                    mode = .add;
+                },
+                .both => {
+                    style = .decay_quadratic;
+                    mode = .mix;
+                },
+            }
             try renderer.drawLine(.{
                 .color = line.color,
-                .style = .solid_color,
-                .blend_mode = .mix,
+                .style = style,
+                .blend_mode = mode,
                 .width = line.width,
                 .start = .{ .x = @intFromFloat(line.x0), .y = @intFromFloat(line.y0) },
                 .end = .{ .x = @intFromFloat(line.x1), .y = @intFromFloat(line.y1) },

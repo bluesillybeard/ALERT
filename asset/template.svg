@@ -23,15 +23,15 @@
      inkscape:pagecheckerboard="0"
      inkscape:deskcolor="#d1d1d1"
      inkscape:document-units="mm"
-     inkscape:zoom="0.54698373"
-     inkscape:cx="826.34999"
-     inkscape:cy="681.92156"
+     inkscape:zoom="1.5471036"
+     inkscape:cx="335.78876"
+     inkscape:cy="704.54234"
      inkscape:window-width="2560"
      inkscape:window-height="1368"
      inkscape:window-x="0"
      inkscape:window-y="0"
      inkscape:window-maximized="1"
-     inkscape:current-layer="svg1" />
+     inkscape:current-layer="layer6" />
   <defs
      id="defs1">
     <rect
@@ -45,7 +45,7 @@
      inkscape:groupmode="layer"
      id="layer7"
      inkscape:label="00:02:00"
-     style="display:none">
+     style="display:inline">
     <text
        xml:space="preserve"
        style="font-size:26.6667px;font-family:'Adwaita Sans';-inkscape-font-specification:'Adwaita Sans';writing-mode:lr-tb;direction:ltr;fill:#000000;stroke:none;stroke-width:40;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:none"
@@ -66,7 +66,7 @@
      inkscape:groupmode="layer"
      id="layer6"
      inkscape:label="00:01:00"
-     style="display:none">
+     style="display:inline">
     <path
        style="fill:none;stroke:#000000;stroke-width:40;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:none"
        d="m 1026.8032,280.96182 v 205.43373 h 72.2142"
@@ -120,12 +120,18 @@
        id="path31"
        sodipodi:nodetypes="ccc"
        inkscape:label="IGNORE: leader" />
+    <path
+       style="fill:none;stroke:#000000;stroke-width:40;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:none"
+       d="m 157.8195,900.7272 223.26439,-84.02799 -302.233705,-20.03744 86.079375,-225.0021 91.13805,158.75457 109.23638,-7.77357 67.22239,-45.0868 -87.36527,-85.32072 51.70953,-1.29274 59.64994,-9.69553 104.23825,32.30838 101.47995,49.45228 -50.41679,201.52498"
+       id="path7"
+       inkscape:label="S 222222FF G 100 99 TEST"
+       sodipodi:nodetypes="ccccccccccccc" />
   </g>
   <g
      inkscape:groupmode="layer"
      id="layer5"
      inkscape:label="00:00:45"
-     style="display:none">
+     style="display:inline">
     <path
        style="fill:none;stroke:#000000;stroke-width:40;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:none"
        d="m 826.96117,484 0.8995,-204.62306 82.1394,25.26671 -2.8362,65.19114 -79.9878,16.17288"
@@ -137,7 +143,7 @@
      inkscape:groupmode="layer"
      id="g17"
      inkscape:label="00:00:30"
-     style="display:none">
+     style="display:inline">
     <path
        style="fill:none;stroke:#000000;stroke-width:40;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:none"
        d="m 465.26446,483.37434 80.42644,-198.96982 46.78099,81.02705 51.55301,-83.29243 93.72386,201.50418"
@@ -149,7 +155,7 @@
      inkscape:groupmode="layer"
      id="layer3"
      inkscape:label="00:00:15"
-     style="display:none">
+     style="display:inline">
     <path
        style="fill:none;stroke:#000000;stroke-width:40;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:none"
        d="M 413.20357,295.35174 H 272.94147 V 484.43343 H 402.21529"
@@ -167,7 +173,7 @@
      inkscape:groupmode="layer"
      id="layer2"
      inkscape:label="00:00:00.start"
-     style="display:none">
+     style="display:inline">
     <path
        style="fill:#000000;stroke:#000000;stroke-width:40;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:none"
        d="M 146.75357,299.70095 V 486.17816"
@@ -208,7 +214,7 @@
      inkscape:label="IGNORE: description"
      inkscape:groupmode="layer"
      id="layer1"
-     style="display:inline">
+     style="display:none">
     <text
        xml:space="preserve"
        style="font-size:47.509px;font-family:'Adwaita Sans';-inkscape-font-specification:'Adwaita Sans';writing-mode:lr-tb;direction:ltr;fill:#000000;stroke:none;stroke-width:3.36677;stroke-linejoin:round"

@@ -43,7 +43,7 @@ pub const PolygonBuilder = struct {
     pub fn runSvgCommand(this: *PolygonBuilder, command: u8, params: []const f64) void {
         switch (command) {
             'M' => {
-                if (params.len < 2) {
+                if (params.len % 2 != 0 or params.len < 2) {
                     std.log.warn("Skipping command {c} {any} due to too few arguments", .{ command, params });
                     return;
                 }
@@ -51,26 +51,39 @@ pub const PolygonBuilder = struct {
                     .x = params[0],
                     .y = params[1],
                 }) catch unreachable;
-                this.startPoint = this.points.items.len - 1;
                 this.penPos = this.points.items.len - 1;
+                this.startPoint = this.penPos;
+
+                for (1..params.len / 2) |i| {
+                    const point = params[i * 2 .. i * 2 + 2];
+                    this.addSegment(.{ .x = point[0], .y = point[1] });
+                    this.penPos = this.points.items.len - 1;
+                }
             },
             'm' => {
-                if (params.len % 2 != 0) {
+                if (params.len % 2 != 0 or params.len < 2) {
                     std.log.warn("Skipping command {c} {any} due to too few arguments", .{ command, params });
                     return;
                 }
-                for (0..params.len / 2) |i| {
+                if (this.penPos) |pen| {
+                    const penPosPoint = this.points.items[pen];
+                    this.points.append(this.allocator, .{
+                        .x = params[0] + penPosPoint.x,
+                        .y = params[1] + penPosPoint.y,
+                    }) catch unreachable;
+                } else {
+                    this.points.append(this.allocator, .{
+                        .x = params[0],
+                        .y = params[1],
+                    }) catch unreachable;
+                }
+                this.penPos = this.points.items.len - 1;
+                this.startPoint = this.penPos;
+
+                for (1..params.len / 2) |i| {
                     const point = params[i * 2 .. i * 2 + 2];
-                    if (this.penPos) |pen| {
-                        const penPosPoint = this.points.items[pen];
-                        this.addSegment(.{ .x = point[0] + penPosPoint.x, .y = point[1] + penPosPoint.y });
-                    } else {
-                        this.points.append(this.allocator, .{
-                            .x = point[0],
-                            .y = point[1],
-                        }) catch unreachable;
-                    }
-                    this.startPoint = this.points.items.len - 1;
+                    const penPosPoint = this.points.items[this.penPos.?];
+                    this.addSegment(.{ .x = point[0] + penPosPoint.x, .y = point[1] + penPosPoint.y });
                     this.penPos = this.points.items.len - 1;
                 }
             },
@@ -79,69 +92,89 @@ pub const PolygonBuilder = struct {
                 this.penPos = this.startPoint;
             },
             'L' => {
-                if (params.len < 2) {
+                if (params.len % 2 != 0) {
                     std.log.warn("Skipping command {c} {any} due to too few arguments", .{ command, params });
                     return;
                 }
-                this.addSegment(.{
-                    .x = params[0],
-                    .y = params[1],
-                });
+                for (0..params.len / 2) |i| {
+                    const point = params[i * 2 .. i * 2 + 2];
+                    this.addSegment(.{
+                        .x = point[0],
+                        .y = point[1],
+                    });
+                    this.penPos = this.points.items.len - 1;
+                }
             },
             'l' => {
-                if (params.len < 2) {
+                if (params.len % 2 != 0) {
                     std.log.warn("Skipping command {c} {any} due to too few arguments", .{ command, params });
                     return;
                 }
-                const penPosReal = this.points.items[@intCast(this.penPos.?)];
-                this.addSegment(.{
-                    .x = params[0] + penPosReal.x,
-                    .y = params[1] + penPosReal.y,
-                });
+                for (0..params.len / 2) |i| {
+                    const point = params[i * 2 .. i * 2 + 2];
+                    const penPosPoint = this.points.items[this.penPos.?];
+                    this.addSegment(.{
+                        .x = point[0] + penPosPoint.x,
+                        .y = point[1] + penPosPoint.y,
+                    });
+                    this.penPos = this.points.items.len - 1;
+                }
             },
             'H' => {
                 if (params.len < 1) {
                     std.log.warn("Skipping command {c} {any} due to too few arguments", .{ command, params });
                     return;
                 }
-                const penPosReal = this.points.items[@intCast(this.penPos.?)];
-                this.addSegment(.{
-                    .x = params[0],
-                    .y = penPosReal.y,
-                });
+                for (0..params.len) |pi| {
+                    const penPosReal = this.points.items[this.penPos.?];
+                    this.addSegment(.{
+                        .x = params[pi],
+                        .y = penPosReal.y,
+                    });
+                    this.penPos = this.points.items.len - 1;
+                }
             },
             'h' => {
                 if (params.len < 1) {
                     std.log.warn("Skipping command {c} {any} due to too few arguments", .{ command, params });
                     return;
                 }
-                const penPosReal = this.points.items[@intCast(this.penPos.?)];
-                this.addSegment(.{
-                    .x = params[0] + penPosReal.x,
-                    .y = penPosReal.y,
-                });
+                for (0..params.len) |pi| {
+                    const penPosReal = this.points.items[this.penPos.?];
+                    this.addSegment(.{
+                        .x = params[pi] + penPosReal.x,
+                        .y = penPosReal.y,
+                    });
+                    this.penPos = this.points.items.len - 1;
+                }
             },
             'V' => {
                 if (params.len < 1) {
                     std.log.warn("Skipping command {c} {any} due to too few arguments", .{ command, params });
                     return;
                 }
-                const penPosReal = this.points.items[@intCast(this.penPos.?)];
-                this.addSegment(.{
-                    .x = penPosReal.x,
-                    .y = params[0],
-                });
+                for (0..params.len) |pi| {
+                    const penPosReal = this.points.items[this.penPos.?];
+                    this.addSegment(.{
+                        .x = penPosReal.x,
+                        .y = params[pi],
+                    });
+                    this.penPos = this.points.items.len - 1;
+                }
             },
             'v' => {
                 if (params.len < 1) {
                     std.log.warn("Skipping command {c} {any} due to too few arguments", .{ command, params });
                     return;
                 }
-                const penPosReal = this.points.items[@intCast(this.penPos.?)];
-                this.addSegment(.{
-                    .x = penPosReal.x,
-                    .y = params[0] + penPosReal.y,
-                });
+                for (0..params.len) |pi| {
+                    const penPosReal = this.points.items[this.penPos.?];
+                    this.addSegment(.{
+                        .x = penPosReal.x,
+                        .y = params[pi] + penPosReal.y,
+                    });
+                    this.penPos = this.points.items.len - 1;
+                }
             },
             // TODO: implement the rest of the path commands.
             // These are all curves, so some kind of resolution option is a good idea.
