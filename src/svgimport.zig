@@ -51,6 +51,7 @@ pub const LevelLine = struct {
     width_percent: f32,
     // You have to be insane to have an ID longer than 32 characters.
     id: [50]u8,
+    /// TODO: we also need a value for interpolate_end so we can delete lines during animation
     interpolate_reset: bool,
     // We store this for debugging purposes
     name: [50]u8,
@@ -158,10 +159,40 @@ pub const ImportedLevel = struct {
                         if (is_layer) {
                             layer_name = inkscape_label;
                             layer_depth = depth;
+
+                            const timestamp_str = std.mem.sliceTo(inkscape_label.?, '.');
+
+                            var timestamp_tokens = std.mem.tokenizeScalar(u8, timestamp_str, ':');
+                            const timestamp_str_minutes = timestamp_tokens.next() orelse {
+                                std.log.err("Failed to parse SVG file {s}: Invalid timestamp: {s}", .{ path, timestamp_str });
+                                return error.InvalidSvg;
+                            };
+                            const timestamp_str_seconds = timestamp_tokens.next() orelse {
+                                std.log.err("Failed to parse SVG file {s}: Invalid timestamp: {s}", .{ path, timestamp_str });
+                                return error.InvalidSvg;
+                            };
+                            const timestamp_str_frames = timestamp_tokens.next() orelse {
+                                std.log.err("Failed to parse SVG file {s}: Invalid timestamp: {s}", .{ path, timestamp_str });
+                                return error.InvalidSvg;
+                            };
+
+                            const timestamp_minutes = std.fmt.parseInt(u64, timestamp_str_minutes, 10) catch {
+                                std.log.err("Failed to parse SVG file {s}: Invalid timestamp: {s}", .{ path, timestamp_str });
+                                return error.InvalidSvg;
+                            };
+
+                            const timestamp_seconds = std.fmt.parseInt(u64, timestamp_str_seconds, 10) catch {
+                                std.log.err("Failed to parse SVG file {s}: Invalid timestamp: {s}", .{ path, timestamp_str });
+                                return error.InvalidSvg;
+                            };
+
+                            const timestamp_frames = std.fmt.parseInt(u64, timestamp_str_frames, 10) catch {
+                                std.log.err("Failed to parse SVG file {s}: Invalid timestamp: {s}", .{ path, timestamp_str });
+                                return error.InvalidSvg;
+                            };
                             try frames.append(import_arena.allocator(), .{
                                 .lines = .empty,
-                                // TODO: parse timestamp
-                                .timestamp = 0,
+                                .timestamp = timestamp_frames + timestamp_seconds * 60 + timestamp_minutes * 60 * 60,
                             });
                         }
                         // End group handling
@@ -392,6 +423,16 @@ pub const ImportedLevel = struct {
             });
         }
         this.frames = try this.arena.allocator().dupe(LevelFrame, finished_frames.items);
+
+        // The last thing to do is sort everything by timestamp
+        std.sort.pdq(LevelFrame, this.frames, void{}, compare_timestamps);
+
+        this.length = this.frames[this.frames.len - 1].timestamp;
+    }
+
+    fn compare_timestamps(ctx: void, lhs: LevelFrame, rhs: LevelFrame) bool {
+        _ = ctx;
+        return lhs.timestamp < rhs.timestamp;
     }
 
     pub fn deinit(this: *ImportedLevel) void {

@@ -59,12 +59,11 @@ pub const PolygonBuilder = struct {
                     std.log.warn("Skipping command {c} {any} due to too few arguments", .{ command, params });
                     return;
                 }
-                for(0..params.len/2) |i| {
-                    const point = params[i*2..i*2+2];
-                    std.log.info("m command point {},{}", .{point[0], point[1]});
+                for (0..params.len / 2) |i| {
+                    const point = params[i * 2 .. i * 2 + 2];
                     if (this.penPos) |pen| {
                         const penPosPoint = this.points.items[pen];
-                        this.addSegment(.{.x =point[0] + penPosPoint.x, .y =point[1] + penPosPoint.y});
+                        this.addSegment(.{ .x = point[0] + penPosPoint.x, .y = point[1] + penPosPoint.y });
                     } else {
                         this.points.append(this.allocator, .{
                             .x = point[0],

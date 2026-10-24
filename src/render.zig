@@ -231,16 +231,16 @@ pub const Renderer = struct {
         const ratio_x = window_width / 1920.0;
         const ratio_y = window_height / 1080.0;
         const scale = @min(ratio_x, ratio_y);
-        
+
         // Set the viewport to clip everything outside the aspect ratio
         const new_width = scale * 1920;
         const new_height = scale * 1080;
-        const offset_x = (window_width - new_width)/2;
-        const offset_y = (window_height - new_height)/2;
+        const offset_x = (window_width - new_width) / 2;
+        const offset_y = (window_height - new_height) / 2;
         gl.viewport(@intFromFloat(offset_x), @intFromFloat(offset_y), @intFromFloat(new_width), @intFromFloat(new_height));
 
         // move all of the lines
-        for(this.lines.items) |*line| {
+        for (this.lines.items) |*line| {
             line.start.x = @intFromFloat(line.start.x * scale + offset_x);
             line.start.y = @intFromFloat(line.start.y * scale + offset_y);
             line.end.x = @intFromFloat(line.end.x * scale + offset_x);
