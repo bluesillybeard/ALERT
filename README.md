@@ -10,7 +10,6 @@ I started it for the 2026 Mines game dev club october game jam.
 - Idk like 1gb of vram or something
 
 ## TODO
-- line interpolation
 - player movement
 - player collision & game-over state
 - audio playback

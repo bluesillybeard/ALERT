@@ -1,0 +1,307 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="1920"
+   height="1080"
+   viewBox="0 0 1920 1080"
+   version="1.1"
+   id="svg1"
+   inkscape:version="1.4.4 (dcaf3e7d9e, 2026-05-05)"
+   sodipodi:docname="animation_tests.svg"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview1"
+     pagecolor="#ffffff"
+     bordercolor="#000000"
+     borderopacity="0.25"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     inkscape:document-units="mm"
+     inkscape:zoom="0.46045"
+     inkscape:cx="743.83755"
+     inkscape:cy="8.6871539"
+     inkscape:window-width="2560"
+     inkscape:window-height="1408"
+     inkscape:window-x="2560"
+     inkscape:window-y="0"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="layer3" />
+  <defs
+     id="defs1">
+    <rect
+       x="797.09867"
+       y="883.02444"
+       width="619.7625"
+       height="53.018031"
+       id="rect36" />
+  </defs>
+  <g
+     inkscape:groupmode="layer"
+     id="layer2"
+     inkscape:label="00:00:00.start"
+     style="display:inline">
+    <path
+       style="fill:none;stroke:#000000;stroke-width:40;stroke-linecap:round;stroke-linejoin:round"
+       d="M 0,1080 V 0 h 1920 v 1080 z"
+       id="path1"
+       inkscape:label="S FFFFFFFF B 100 99 BORDER0" />
+    <path
+       style="fill:none;stroke:#000000;stroke-width:40;stroke-linecap:round;stroke-linejoin:round"
+       d="m 211.25762,139.08094 9.93042,242.9488"
+       id="path34"
+       inkscape:label="S FFFFFFFF G 050 99 INTERP5" />
+    <path
+       style="display:inline;fill:none;stroke:#000000;stroke-width:40;stroke-linecap:round;stroke-linejoin:round"
+       d="m 346.43214,133.55576 9.9304,242.94879"
+       id="path34-1"
+       inkscape:label="S FFFFFFFF G 050 99 INTERP4" />
+    <path
+       style="fill:none;stroke:#000000;stroke-width:40;stroke-linecap:round;stroke-linejoin:round"
+       d="m 216.22283,260.55535 135.17451,-5.5252"
+       id="path35"
+       inkscape:label="S FFFFFFFF G 050 99 INTERP3" />
+    <path
+       style="fill:none;stroke:#000000;stroke-width:40;stroke-linecap:round;stroke-linejoin:round"
+       d="M 489.97171,377.4474 479.25732,115.31845"
+       id="path36"
+       inkscape:label="S FFFFFFFF G 050 99 INTERP2" />
+    <path
+       style="fill:none;stroke:#000000;stroke-width:40;stroke-linecap:round;stroke-linejoin:round"
+       d="m 418.74846,117.79171 121.01772,-4.94653"
+       id="path37"
+       inkscape:label="S FFFFFFFF G 050 99 INTERP1" />
+    <path
+       style="fill:none;stroke:#000000;stroke-width:40;stroke-linecap:round;stroke-linejoin:round"
+       d="m 413.0227,380.59266 153.89802,-6.29051"
+       id="path38"
+       inkscape:label="S FFFFFFFF G 050 99 INTERP0" />
+    <path
+       style="opacity:1;fill:none;stroke:#000000;stroke-width:40;stroke-linecap:round;stroke-linejoin:round"
+       d="m 723.20556,536.43175 -5.42947,3.25768 -3.25768,47.77935 v 16.28841 l 36.9204,45.60756 18.4602,8.68716 21.71789,11.94483 55.3806,10.85894 56.4665,5.42948 48.86524,-2.17179 20.63199,-7.60126 27.14737,-15.20252 6.5154,-20.63199 1.0858,-15.20252 v -15.20252 -14.11663 l -5.4294,-13.03073 -7.60128,-22.80378"
+       id="path60"
+       sodipodi:nodetypes="cccccccccccccccccc"
+       inkscape:label="S FFFFFFFF G 050 99 SMILE" />
+    <path
+       style="opacity:1;fill:none;stroke:#000000;stroke-width:40;stroke-linecap:round;stroke-linejoin:round"
+       d="m 790.531,434.35769 v 38.0063 l 1.0859,6.51537 v 6.51536 l 3.25768,6.51537 1.08589,13.03073 1.0859,3.25768 v 2.17179 l 1.08589,8.68715"
+       id="path61"
+       sodipodi:nodetypes="ccccccccc"
+       inkscape:label="S FFFFFFFF G 050 99 LEYE" />
+    <path
+       style="opacity:1;fill:none;stroke:#000000;stroke-width:40;stroke-linecap:round;stroke-linejoin:round"
+       d="m 905.63579,422.41286 1.0859,6.51536 v 14.11663 19.54609 45.60756"
+       id="path62"
+       sodipodi:nodetypes="ccccc"
+       inkscape:label="S FFFFFFFF G 050 99 REYE" />
+  </g>
+  <g
+     inkscape:groupmode="layer"
+     id="g45"
+     inkscape:label="00:02:00"
+     style="display:inline;opacity:1">
+    <path
+       style="fill:none;stroke:#000000;stroke-width:40;stroke-linecap:round;stroke-linejoin:round"
+       d="M 0,1080 V 0 h 1920 v 1080 z"
+       id="path39"
+       inkscape:label="S FFFFFFFF B 050 99 BORDER0" />
+    <path
+       style="fill:none;stroke:#000000;stroke-width:40;stroke-linecap:round;stroke-linejoin:round"
+       d="M 1444.2411,114.11684 V 357.2685"
+       id="path40"
+       inkscape:label="S FFFFFFFF B 050 99 INTERP5" />
+    <path
+       style="display:inline;fill:none;stroke:#000000;stroke-width:40;stroke-linecap:round;stroke-linejoin:round"
+       d="M 1579.5285,114.11684 V 357.2685"
+       id="path41"
+       inkscape:label="S FFFFFFFF B 050 99 INTERP4" />
+    <path
+       style="fill:none;stroke:#000000;stroke-width:40;stroke-linecap:round;stroke-linejoin:round"
+       d="m 1444.2411,235.69267 h 135.2874"
+       id="path42"
+       inkscape:label="S FFFFFFFF B 050 99 INTERP3" />
+    <path
+       style="fill:none;stroke:#000000;stroke-width:40;stroke-linecap:round;stroke-linejoin:round"
+       d="M 1712.9877,363.66722 V 101.31938"
+       id="path43"
+       inkscape:label="S FFFFFFFF B 050 99 INTERP2" />
+    <path
+       style="fill:none;stroke:#000000;stroke-width:40;stroke-linecap:round;stroke-linejoin:round"
+       d="M 1652.4283,101.31938 H 1773.547"
+       id="path44"
+       inkscape:label="S FFFFFFFF B 050 99 INTERP1" />
+    <path
+       style="fill:none;stroke:#000000;stroke-width:40;stroke-linecap:round;stroke-linejoin:round"
+       d="m 1635.9744,363.66722 h 154.0265"
+       id="path45"
+       inkscape:label="S FFFFFFFF B 050 99 INTERP0" />
+  </g>
+  <g
+     inkscape:groupmode="layer"
+     id="g52"
+     inkscape:label="00:04:00"
+     style="display:inline;opacity:1">
+    <path
+       style="fill:none;stroke:#000000;stroke-width:40;stroke-linecap:round;stroke-linejoin:round"
+       d="M 0,1080 V 0 h 1920 v 1080 z"
+       id="path46"
+       inkscape:label="S FFFFFFFF B 100 99 BORDER0" />
+    <path
+       style="fill:none;stroke:#000000;stroke-width:40;stroke-linecap:round;stroke-linejoin:round"
+       d="m 114.33672,743.74824 -4.60706,289.22226"
+       id="path47"
+       inkscape:label="S FFFFFFFF B 050 99 INTERP5"
+       sodipodi:nodetypes="cc" />
+    <path
+       style="display:inline;fill:none;stroke:#000000;stroke-width:40;stroke-linecap:round;stroke-linejoin:round"
+       d="m 112.03319,888.35937 142.19799,81.39138"
+       id="path48"
+       inkscape:label="S FFFFFFFF B 050 99 INTERP4"
+       sodipodi:nodetypes="cc" />
+    <path
+       style="fill:none;stroke:#000000;stroke-width:40;stroke-linecap:round;stroke-linejoin:round"
+       d="M 109.72966,1032.9705 254.23118,969.75075"
+       id="path49"
+       inkscape:label="S FFFFFFFF B 050 99 INTERP3"
+       sodipodi:nodetypes="cc" />
+    <path
+       style="fill:none;stroke:#000000;stroke-width:40;stroke-linecap:round;stroke-linejoin:round"
+       d="M 426.04641,1017.8696 V 755.52177"
+       id="path50"
+       inkscape:label="S FFFFFFFF B 050 99 INTERP2" />
+    <path
+       style="fill:none;stroke:#000000;stroke-width:40;stroke-linecap:round;stroke-linejoin:round"
+       d="m 365.48706,755.52177 h 121.1187"
+       id="path51"
+       inkscape:label="S FFFFFFFF B 050 99 INTERP1" />
+    <path
+       style="fill:none;stroke:#000000;stroke-width:40;stroke-linecap:round;stroke-linejoin:round"
+       d="m 349.03316,1017.8696 h 154.0265"
+       id="path52"
+       inkscape:label="S FFFFFFFF B 050 99 INTERP0" />
+    <path
+       style="display:inline;fill:none;stroke:#000000;stroke-width:40;stroke-linecap:round;stroke-linejoin:round"
+       d="m 709.0889,758.49713 -5.42947,-3.25768 -3.25768,-47.77935 v -16.28841 l 36.9204,-45.60757 18.4602,-8.68715 21.71789,-11.94483 55.38061,-10.85894 56.4665,-5.42948 48.8652,2.17179 20.632,7.60126 27.1474,15.20252 6.5154,20.63199 1.0858,15.20252 v 15.20252 14.11663 l -5.4294,13.03073 -7.6013,22.80378"
+       id="path60-2"
+       sodipodi:nodetypes="cccccccccccccccccc"
+       inkscape:label="S FFFFFFFF G 050 99 SMILE R" />
+  </g>
+  <g
+     inkscape:groupmode="layer"
+     id="g59"
+     inkscape:label="00:06:00"
+     style="display:inline;opacity:1">
+    <path
+       style="fill:none;stroke:#000000;stroke-width:40;stroke-linecap:round;stroke-linejoin:round"
+       d="M 0,1080 V 0 h 1920 v 1080 z"
+       id="path53"
+       inkscape:label="S FFFFFFFF B 100 99 BORDER0" />
+    <path
+       style="fill:none;stroke:#000000;stroke-width:40;stroke-linecap:round;stroke-linejoin:round"
+       d="M 984.6071,-329.22223 980,-40"
+       id="path54"
+       inkscape:label="S FFFFFF00 B 050 99 INTERP5"
+       sodipodi:nodetypes="cc" />
+    <path
+       style="display:inline;fill:none;stroke:#000000;stroke-width:40;stroke-linecap:round;stroke-linejoin:round"
+       d="m 982.3036,-184.6111 142.198,81.39138"
+       id="path55"
+       inkscape:label="S FFFFFF00 B 050 99 INTERP4"
+       sodipodi:nodetypes="cc" />
+    <path
+       style="fill:none;stroke:#000000;stroke-width:40;stroke-linecap:round;stroke-linejoin:round"
+       d="m 980,-40 144.5016,-63.21972"
+       id="path56"
+       inkscape:label="S FFFFFF00 B 050 99 INTERP3"
+       sodipodi:nodetypes="cc" />
+    <path
+       style="fill:none;stroke:#000000;stroke-width:40;stroke-linecap:round;stroke-linejoin:round"
+       d="M 1296.3168,-55.1009 V -317.4487"
+       id="path57"
+       inkscape:label="S FFFFFF00 B 050 99 INTERP2" />
+    <path
+       style="fill:none;stroke:#000000;stroke-width:40;stroke-linecap:round;stroke-linejoin:round"
+       d="m 1235.7574,-317.4487 h 121.1187"
+       id="path58"
+       inkscape:label="S FFFFFF00 B 050 99 INTERP1" />
+    <path
+       style="fill:none;stroke:#000000;stroke-width:40;stroke-linecap:round;stroke-linejoin:round"
+       d="M 1219.3035,-55.1009 H 1373.33"
+       id="path59"
+       inkscape:label="S FFFFFF00 B 050 99 INTERP0" />
+    <path
+       style="display:inline;fill:none;stroke:#000000;stroke-width:40;stroke-linecap:round;stroke-linejoin:round"
+       d="m 791.07394,431.64295 v 38.0063 l 1.0859,6.51537 v 6.51536 l 3.25768,6.51537 1.08589,13.03073 1.0859,3.25768 v 2.17179 l 1.08589,8.68715"
+       id="path61-0"
+       sodipodi:nodetypes="ccccccccc"
+       inkscape:label="S FF2222FF G 050 99 LEYE" />
+    <path
+       style="display:inline;fill:none;stroke:#000000;stroke-width:40;stroke-linecap:round;stroke-linejoin:round"
+       d="m 906.17874,419.69812 1.0859,6.51536 v 14.11663 19.54609 45.60756"
+       id="path62-2"
+       sodipodi:nodetypes="ccccc"
+       inkscape:label="S FF2222FF G 050 99 REYE" />
+  </g>
+  <g
+     inkscape:groupmode="layer"
+     id="layer3"
+     inkscape:label="00:08:00.end" />
+  <g
+     inkscape:label="IGNORE: description"
+     inkscape:groupmode="layer"
+     id="layer1"
+     style="display:none">
+    <text
+       xml:space="preserve"
+       style="font-size:47.509px;font-family:'Adwaita Sans';-inkscape-font-specification:'Adwaita Sans';writing-mode:lr-tb;direction:ltr;display:inline;fill:#000000;stroke:none;stroke-width:3.36677;stroke-linejoin:round"
+       x="65.922874"
+       y="109.29647"
+       id="text1"
+       inkscape:label="description"><tspan
+         sodipodi:role="line"
+         style="fill:#000000;stroke:none;stroke-width:3.36677"
+         x="0"
+         y="0"
+         id="tspan36">Some animation tests:</tspan><tspan
+         sodipodi:role="line"
+         style="fill:#000000;stroke:none;stroke-width:3.36677"
+         x="0"
+         y="0"
+         id="tspan26">- interpolation of point locations</tspan><tspan
+         sodipodi:role="line"
+         style="fill:#000000;stroke:none;stroke-width:3.36677"
+         x="0"
+         y="0"
+         id="tspan27">- interpolation of line properties</tspan><tspan
+         sodipodi:role="line"
+         style="fill:#000000;stroke:none;stroke-width:3.36677"
+         x="0"
+         y="0"
+         id="tspan28">    - width</tspan><tspan
+         sodipodi:role="line"
+         style="fill:#000000;stroke:none;stroke-width:3.36677"
+         x="0"
+         y="0"
+         id="tspan30">    - width percent isn't tested here but that code is exactly identical to everything else so</tspan><tspan
+         sodipodi:role="line"
+         style="fill:#000000;stroke:none;stroke-width:3.36677"
+         x="0"
+         y="0"
+         id="tspan59">    - color</tspan><tspan
+         sodipodi:role="line"
+         style="fill:#000000;stroke:none;stroke-width:3.36677"
+         x="0"
+         y="0"
+         id="tspan31">- interpolation across many frames</tspan><tspan
+         sodipodi:role="line"
+         style="fill:#000000;stroke:none;stroke-width:3.36677"
+         x="0"
+         y="0"
+         id="tspan33">- interpolation end points</tspan></text>
+  </g>
+</svg>

@@ -56,7 +56,7 @@ pub const LevelPlayer = struct {
         while (lines_iterator.next()) |line| {
             var start_ref_index: usize = undefined;
             // find the first reference whose timestamp is greater than or equal to ours
-            const end_ref_index = std.sort.partitionPoint(LineRef, line.frames_referenced.items, CompareLinerefTimestamp{ .timestamp = timestamp, .parent = this }, CompareLinerefTimestamp.compare);
+            var end_ref_index = std.sort.partitionPoint(LineRef, line.frames_referenced.items, CompareLinerefTimestamp{ .timestamp = timestamp, .parent = this }, CompareLinerefTimestamp.compare);
             if (end_ref_index > 0) {
                 start_ref_index = end_ref_index - 1;
             } else {
@@ -65,16 +65,22 @@ pub const LevelPlayer = struct {
             if (this.level.frames[line.frames_referenced.items[start_ref_index].frame_index].timestamp > timestamp) {
                 continue;
             }
-
-            if (start_ref_index != end_ref_index) {
-                if (end_ref_index == line.frames_referenced.items.len) {
-                    try active_references.append(this.frame_data_arena.allocator(), .{ .start = line.frames_referenced.items[start_ref_index], .end = line.frames_referenced.items[end_ref_index - 1] });
-                } else {
-                    try active_references.append(this.frame_data_arena.allocator(), .{ .start = line.frames_referenced.items[start_ref_index], .end = line.frames_referenced.items[end_ref_index] });
-                }
-            } else {
-                try active_references.append(this.frame_data_arena.allocator(), .{ .start = line.frames_referenced.items[end_ref_index], .end = null });
+            
+            if (end_ref_index == line.frames_referenced.items.len) {
+                end_ref_index -= 1;
             }
+            
+            const endref = line.frames_referenced.items[end_ref_index];
+            if(this.level.frames[endref.frame_index].lines[endref.line_index].interpolate_reset) {
+                end_ref_index = start_ref_index;
+            }
+
+            if(start_ref_index == end_ref_index) {
+                try active_references.append(this.frame_data_arena.allocator(), .{ .start = line.frames_referenced.items[end_ref_index], .end = null });
+            } else {
+                try active_references.append(this.frame_data_arena.allocator(), .{ .start = line.frames_referenced.items[start_ref_index], .end = line.frames_referenced.items[end_ref_index] });
+            }
+
         }
 
         // Combine everything together
@@ -82,13 +88,64 @@ pub const LevelPlayer = struct {
 
         // render out non-interpolated lines
         for (this.level.frames[frame_index].lines) |polyline| {
-            try lines.appendSlice(this.frame_data_arena.allocator(), polyline.lines);
+            if(polyline.id[0] == 0) {
+                try lines.appendSlice(this.frame_data_arena.allocator(), polyline.lines);
+            }
         }
 
         // render out interpolated lines
-        // TODO: actually interpolate
         for (active_references.items) |ref| {
-            try lines.appendSlice(this.frame_data_arena.allocator(), this.level.frames[ref.start.frame_index].lines[ref.start.line_index].lines);
+            if (ref.end) |endref| {
+                const start_frame = this.level.frames[ref.start.frame_index];
+                const end_frame = this.level.frames[endref.frame_index];
+                const start_lines = start_frame.lines[ref.start.line_index];
+                const end_lines = end_frame.lines[endref.line_index];
+                const start_timestamp: f32 = @floatFromInt(start_frame.timestamp);
+                const end_timestamp: f32 = @floatFromInt(end_frame.timestamp);
+                if (start_lines.lines.len != end_lines.lines.len) {
+                    std.log.warn("Interpolation with id {s} from timestamp {} to {} has mismatched #of lines: assuming start shape and debug style", .{ std.mem.sliceTo(&start_lines.id, 0), start_timestamp, end_timestamp });
+                    for (start_lines.lines) |line| {
+                        const new_line = svgimport.LevelLine{
+                            .T = .ignore,
+                            .color = .{ .r = 255, .g = 0, .b = 255, .a = 255 },
+                            .style = .blended,
+                            .width = line.width,
+                            .width_percent = line.width_percent,
+                            .x0 = line.x0,
+                            .y0 = line.y0,
+                            .x1 = line.x1,
+                            .y1 = line.y1,
+                        };
+                        try lines.append(this.frame_data_arena.allocator(), new_line);
+                    }
+                    continue;
+                }
+                const mix = std.math.clamp((@as(f32, @floatFromInt(timestamp)) - start_timestamp) / (end_timestamp - start_timestamp), 0, 1);
+                const lerp = std.math.lerp;
+                for (0..start_lines.lines.len) |index| {
+                    const start_line = start_lines.lines[index];
+                    const end_line = end_lines.lines[index];
+                    const new_line = svgimport.LevelLine{
+                        .T = start_line.T,
+                        .color = .{
+                            .r = @trunc(lerp(@as(f32, @floatFromInt(start_line.color.r)), @as(f32, @floatFromInt(end_line.color.r)), mix)),
+                            .g = @trunc(lerp(@as(f32, @floatFromInt(start_line.color.g)), @as(f32, @floatFromInt(end_line.color.g)), mix)),
+                            .b = @trunc(lerp(@as(f32, @floatFromInt(start_line.color.b)), @as(f32, @floatFromInt(end_line.color.b)), mix)),
+                            .a = @trunc(lerp(@as(f32, @floatFromInt(start_line.color.a)), @as(f32, @floatFromInt(end_line.color.a)), mix)),
+                        },
+                        .style = start_line.style,
+                        .width = @trunc(lerp(@as(f32, @floatFromInt(start_line.width)), @as(f32, @floatFromInt(end_line.width)), mix)),
+                        .width_percent = lerp(start_line.width_percent, end_line.width_percent, mix),
+                        .x0 = lerp(start_line.x0, end_line.x0, mix),
+                        .y0 = lerp(start_line.y0, end_line.y0, mix),
+                        .x1 = lerp(start_line.x1, end_line.x1, mix),
+                        .y1 = lerp(start_line.y1, end_line.y1, mix),
+                    };
+                    try lines.append(this.frame_data_arena.allocator(), new_line);
+                }
+            } else {
+                try lines.appendSlice(this.frame_data_arena.allocator(), this.level.frames[ref.start.frame_index].lines[ref.start.line_index].lines);
+            }
         }
 
         return .{

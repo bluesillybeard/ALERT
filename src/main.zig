@@ -4,6 +4,8 @@ const render = @import("render.zig");
 const svgimport = @import("svgimport.zig");
 const levelplayer = @import("levelplayer.zig");
 
+const level_path = "asset/animation_tests.svg";
+
 pub fn main(init: std.process.Init) !void {
     var renderer: render.Renderer = undefined;
     try renderer.init(init.gpa);
@@ -14,7 +16,7 @@ pub fn main(init: std.process.Init) !void {
     defer frame_arena_obj.deinit();
 
     var level: svgimport.ImportedLevel = .{};
-    try level.init("asset/template.svg", init.io, init.gpa);
+    try level.init(level_path, init.io, init.gpa);
     defer level.deinit();
 
     var player: levelplayer.LevelPlayer = undefined;
@@ -25,10 +27,10 @@ pub fn main(init: std.process.Init) !void {
     var playback_frame: u64 = 0;
     while (!renderer.window.shouldClose()) {
         if (!reload_key_was_down and renderer.window.getKey(.h) == .press) {
-            std.log.info("Reloading {s}", .{"asset/template.svg"});
+            std.log.info("Reloading {s}", .{level_path});
             player.deinit();
             level.deinit();
-            try level.init("asset/template.svg", init.io, init.gpa);
+            try level.init(level_path, init.io, init.gpa);
             try player.load(&level, init.gpa);
         }
         reload_key_was_down = renderer.window.getKey(.h) == .press;
