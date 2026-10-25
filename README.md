@@ -10,6 +10,7 @@ I started it for the 2026 Mines game dev club october game jam.
 - Idk like 1gb of vram or something
 
 ## TODO
+- fix fps dependency rather than assuming 60fps, *the animation plays literally 3x speed on my 180hz monitor*
 - player movement
 - player collision & game-over state
 - audio playback
