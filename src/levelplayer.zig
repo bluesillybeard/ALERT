@@ -40,7 +40,7 @@ pub const LevelPlayer = struct {
     }
 
     /// The generated frame data is freed on the next call to generateFrame
-    pub fn generateFrame(this: *LevelPlayer, timestamp: u64) !FrameData {
+    pub fn generateFrame(this: *LevelPlayer, timestamp: u64, partial: f32) !FrameData {
         _ = this.frame_data_arena.reset(.retain_capacity);
         // find the first frame with a timestamp greater than the one we are looking for
         var frame_index = std.sort.partitionPoint(svgimport.LevelFrame, this.level.frames, timestamp, compare_timestamps);
@@ -96,6 +96,7 @@ pub const LevelPlayer = struct {
         // render out interpolated lines
         for (active_references.items) |ref| {
             if (ref.end) |endref| {
+                // TODO: I highly highly doubt any level will get long enough for this to become an issue, but using floating points for timestamps is generally a very bad idea.
                 const start_frame = this.level.frames[ref.start.frame_index];
                 const end_frame = this.level.frames[endref.frame_index];
                 const start_lines = start_frame.lines[ref.start.line_index];
@@ -120,7 +121,7 @@ pub const LevelPlayer = struct {
                     }
                     continue;
                 }
-                const mix = std.math.clamp((@as(f32, @floatFromInt(timestamp)) - start_timestamp) / (end_timestamp - start_timestamp), 0, 1);
+                const mix = std.math.clamp((@as(f32, @floatFromInt(timestamp)) + partial - start_timestamp) / (end_timestamp - start_timestamp), 0, 1);
                 const lerp = std.math.lerp;
                 for (0..start_lines.lines.len) |index| {
                     const start_line = start_lines.lines[index];
