@@ -5,9 +5,7 @@ So basically this is a scuffed line renderer (despite the fact that I have liter
 I started it for the 2026 Mines game dev club october game jam.
 
 ## MINIMUM REQUIREMENTS
-- OpenGL 4.3
-    - In hindsight I should have used sokol or bgfx or anything else so macos support could have been possible. Oh well.
-- Idk like 1gb of vram or something
+- OpenGL 2.1
 
 ## TODO
 - player movement

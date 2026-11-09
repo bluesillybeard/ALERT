@@ -8,11 +8,8 @@ const TILE_SIZE = 64;
 // The maximum distance a line may be to still be included in the
 const TILE_MARGIN = @as(comptime_float, TILE_SIZE) / 2.0 * @sqrt(2.0);
 
-// First version with SSBOs, so I can just excrete the line data into a buffer that the pixel shader refines
-// A sane renderer would convert the lines to meshes or w/e but frankly I can't be bothered.
-// (plus using what is basically a per-pixel compute shader has some neat benefits)
-const GL_VERSION_MAJOR = 4;
-const GL_VERSION_MINOR = 3;
+const GL_VERSION_MAJOR = 2;
+const GL_VERSION_MINOR = 1;
 
 const glfw = @import("zglfw");
 const opengl = @import("opengl");
@@ -129,7 +126,7 @@ pub const Renderer = struct {
         const window = try glfw.createWindow(800, 600, "ALERT", null, null);
         glfw.makeContextCurrent(window);
 
-        try opengl.loadCoreProfile(glfw.getProcAddress, 4, 3);
+        try opengl.loadCoreProfile(glfw.getProcAddress, GL_VERSION_MAJOR, GL_VERSION_MINOR);
 
         // This is so all this interesting stuff shows up in frame 1 in apitrace
         // GLFW and EGL end up creating a lot of noise on init, so this makes the actual init that we care about easier to find among all of that in a trace.
