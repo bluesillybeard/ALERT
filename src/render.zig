@@ -1,15 +1,8 @@
-// TODO: perhaps put this in some kind of config?
-// To be honest though, for this game I see no need to change it at runtime.
-const MAX_LINES = 10000;
-
-// The spatial partitioning tiles are NxN pixels in size
-const TILE_SIZE = 64;
-
-// The maximum distance a line may be to still be included in the
-const TILE_MARGIN = @as(comptime_float, TILE_SIZE) / 2.0 * @sqrt(2.0);
-
 const GL_VERSION_MAJOR = 2;
 const GL_VERSION_MINOR = 1;
+
+// It might make more sense to instead use some kind of circle mask texture but we'll see what happens
+const CAP_POINTS = 8;
 
 const glfw = @import("zglfw");
 const opengl = @import("opengl");
@@ -42,6 +35,7 @@ pub const BlendMode = enum(u8) {
     mix,
 };
 
+// There is no need for this to be packed anymore (at least for now) since we have completely switched how the rendering works.
 pub const Line = packed struct(u128) {
     color: Color,
     // These are in pixel coordinates (if you have more than a 65k x 65k monitor playing this game... I'm sorry.)
@@ -104,9 +98,11 @@ pub const Renderer = struct {
 
     program_id: gl.Uint,
 
-    lines_buffer_id: gl.Uint,
-    tiles_buffer_id: gl.Uint,
-    tile_indices_buffer_id: gl.Uint,
+    position_buffer_id: gl.Uint,
+    color_buffer_id: gl.Uint,
+    distance_buffer_id: gl.Uint,
+    style_buffer_id: gl.Uint,
+    index_buffer_id: gl.Uint,
 
     vao_id: gl.Uint,
 
@@ -188,27 +184,38 @@ pub const Renderer = struct {
         gl.deleteShader(vertex_shader_id);
         gl.deleteShader(fragment_shader_id);
 
-        var lines_buffer: gl.Uint = 0;
-        gl.genBuffers(1, &lines_buffer);
+        // attribute vec2 pos;
+        // attribute vec4 col;
+        // attribute float dis;
+        // attribute float sty;
 
-        var tiles_buffer: gl.Uint = 0;
-        gl.genBuffers(1, &tiles_buffer);
+        var position_buffer: gl.Uint = 0;
+        var color_buffer: gl.Uint = 0;
+        var distance_buffer: gl.Uint = 0;
+        var style_buffer: gl.Uint = 0;
+        var index_buffer: gl.Uint = 0;
+        gl.genBuffers(1, &position_buffer);
+        gl.genBuffers(1, &color_buffer);
+        gl.genBuffers(1, &distance_buffer);
+        gl.genBuffers(1, &style_buffer);
+        gl.genBuffers(1, &index_buffer);
 
-        var tile_indices_buffer: gl.Uint = 0;
-        gl.genBuffers(1, &tile_indices_buffer);
-
-        // Apparently I still need a VAO despite not using any vertex buffer of any sort
-        // Seriously, OpenGL, I am literally creating an empty VAO for no reason. I don't have as much as a single attribute.
-        var vao_id: c_uint = 0;
+        var vao_id: gl.Uint = 0;
         gl.genVertexArrays(1, &vao_id);
+        gl.vertexAttribPointer(0, 2, gl.FLOAT, gl.FALSE, 2 * @sizeOf(f32), 0);
+        gl.vertexAttribPointer(1, 4, gl.UNSIGNED_BYTE, gl.TRUE, 4, 0);
+        gl.vertexAttribPointer(2, 1, gl.FLOAT, gl.FALSE, 1 * @sizeOf(f32), 0);
+        gl.vertexAttribPointer(3, 1, gl.FLOAT, gl.FALSE, 1 * @sizeOf(f32), 0);
 
         this.* = .{
             .window = window,
-            .lines = try .initCapacity(allocator, MAX_LINES),
+            .lines = .empty,
             .program_id = program_id,
-            .lines_buffer_id = lines_buffer,
-            .tiles_buffer_id = tiles_buffer,
-            .tile_indices_buffer_id = tile_indices_buffer,
+            .position_buffer_id = position_buffer,
+            .color_buffer_id = color_buffer,
+            .distance_buffer_id = distance_buffer,
+            .style_buffer_id = style_buffer,
+            .index_buffer_id = index_buffer,
             .vao_id = vao_id,
         };
     }
@@ -245,69 +252,38 @@ pub const Renderer = struct {
             line.width = @max(@as(u8, @intFromFloat(line.width * scale)), 2);
         }
 
-        // Upload new lines
-        gl.bindBuffer(gl.SHADER_STORAGE_BUFFER, this.lines_buffer_id);
-        gl.bufferData(gl.SHADER_STORAGE_BUFFER, @intCast(this.lines.items.len * @sizeOf(Line)), this.lines.items.ptr, gl.DYNAMIC_DRAW);
+        const num_vertices = this.lines.items.len * (CAP_POINTS * 2 + 2);
+        const num_elements = this.lines.items.len * (CAP_POINTS * 4);
 
-        // Update tile buffer
-        const num_x_tiles: u32 = @intCast(@divTrunc(window_size[0] - 1, TILE_SIZE) + 1);
-        const num_y_tiles: u32 = @intCast(@divTrunc(window_size[1] - 1, TILE_SIZE) + 1);
-        const num_total_tiles = num_x_tiles * num_y_tiles;
+        const pos_buffer_data = try temp_alloc.alloc(f32, num_vertices * 2);
+        const color_buffer_data = try temp_alloc.alloc(u32, num_vertices);
+        const distance_buffer_data = try temp_alloc.alloc(f32, num_vertices);
+        const style_buffer_data = try temp_alloc.alloc(f32, num_vertices);
+        const index_buffer_data = try temp_alloc.alloc(u32, num_elements);
+        _ = pos_buffer_data;
+        _ = color_buffer_data;
+        _ = distance_buffer_data;
+        _ = style_buffer_data;
+        _ = index_buffer_data;
 
-        // Go through each tile and make a list of the lines that touch it.
-        const tile_indices = try temp_alloc.alloc(u32, num_total_tiles);
-        var tile_data = try std.ArrayList(u32).initCapacity(temp_alloc, num_total_tiles * (MAX_LINES + 1));
-        for (0..num_total_tiles) |tile_index| {
-            const tile_x = tile_index % num_x_tiles;
-            const tile_y = tile_index / num_x_tiles;
-            const tile_pixel_x: u16 = @intCast(tile_x * TILE_SIZE + TILE_SIZE / 2);
-            const tile_pixel_y: u16 = @intCast(tile_y * TILE_SIZE + TILE_SIZE / 2);
-
-            const start_index = tile_data.items.len;
-            // Allocate the space for the #of lines in this tile
-            try tile_data.appendBounded(0);
-            var tile_num_lines: u32 = 0;
-            for (0..this.lines.items.len) |line_index| {
-                const line = this.lines.items[line_index];
-                const distance_to_tile = line_segment_distance_square(line.start, line.end, .{ .x = tile_pixel_x, .y = tile_pixel_y });
-                const compare_to = TILE_MARGIN + @as(f32, @floatFromInt(line.width)) / 2.0;
-                if (distance_to_tile < compare_to * compare_to) {
-                    try tile_data.appendBounded(@intCast(line_index));
-                    tile_num_lines += 1;
-                }
-            }
-            tile_data.items[start_index] = tile_num_lines;
-            tile_indices[tile_index] = @intCast(start_index);
+        for (this.lines.items, 0..) |line, i| {
+            const vertex_buffer_offset = i * (CAP_POINTS * 2 + 2);
+            const element_buffer_offset = i * (CAP_POINTS * 4);
+            // Vertex Buffer ordering:
+            // x start cap points
+            // start cap point
+            // x end cap points
+            // end cap point
+            // TODO: generate lines
+            _ = vertex_buffer_offset;
+            _ = element_buffer_offset;
+            _ = line;
         }
-
-        gl.bindBuffer(gl.SHADER_STORAGE_BUFFER, this.tile_indices_buffer_id);
-        gl.bufferData(gl.SHADER_STORAGE_BUFFER, @intCast(tile_indices.len * @sizeOf(u32)), tile_indices.ptr, gl.DYNAMIC_DRAW);
-
-        gl.bindBuffer(gl.SHADER_STORAGE_BUFFER, this.tiles_buffer_id);
-        gl.bufferData(gl.SHADER_STORAGE_BUFFER, @intCast(tile_data.items.len * @sizeOf(u32)), tile_data.items.ptr, gl.DYNAMIC_DRAW);
 
         // Draw
         gl.clear(gl.COLOR_BUFFER_BIT);
 
-        const lines_buffer_resource_index = gl.getProgramResourceIndex(this.program_id, gl.SHADER_STORAGE_BLOCK, "lines");
-        gl.shaderStorageBlockBinding(this.program_id, lines_buffer_resource_index, 0);
-
-        const tiles_buffer_resource_index = gl.getProgramResourceIndex(this.program_id, gl.SHADER_STORAGE_BLOCK, "tiles");
-        gl.shaderStorageBlockBinding(this.program_id, tiles_buffer_resource_index, 1);
-
-        const tile_indices_buffer_resource_index = gl.getProgramResourceIndex(this.program_id, gl.SHADER_STORAGE_BLOCK, "tile_indices");
-        gl.shaderStorageBlockBinding(this.program_id, tile_indices_buffer_resource_index, 2);
-
-        gl.useProgram(this.program_id);
-        gl.bindVertexArray(this.vao_id);
-        gl.bindBufferBase(gl.SHADER_STORAGE_BUFFER, 0, this.lines_buffer_id);
-        gl.bindBufferBase(gl.SHADER_STORAGE_BUFFER, 1, this.tiles_buffer_id);
-        gl.bindBufferBase(gl.SHADER_STORAGE_BUFFER, 2, this.tile_indices_buffer_id);
-        gl.uniform1ui(0, @intCast(this.lines.items.len));
-        gl.uniform1ui(1, @intCast(num_x_tiles));
-        gl.uniform1ui(2, @intCast(num_y_tiles));
-        gl.drawArrays(gl.TRIANGLES, 0, 6);
-
+        // TODO: draw
         this.window.swapBuffers();
 
         this.lines.clearRetainingCapacity();
