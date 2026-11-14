@@ -18,22 +18,32 @@ A layer may optionally have a name by following the timestamp with a period. So 
 You do not need to (and in fact I advice against) having a layer for every frame. Interpolation should be used wherever possible.
 
 ### Objects and interpolation
-The only objects that are parsed by the level loader are paths and layers. Groups and all other objects are not considered. Putting paths inside groups might work if you get lucky.
-// - Naming Convention for objects: "T RRGGBBAA S WWW PP IIII R.name"
-//    - T -> One of S, E, I for Solid, Evil, Ignore
-//    - RRGGBBAA -> 16 digit hex color code (Yes, the SVG color is fully ignored)
-//    - S -> one of B, G, M, L for Simple, Glowing, mBlended, gLowing&bLended
-//    - WWW -> width of the line in decimal half-pixels
-//    - PP -> Percent of the line's width to be considered a hitbox for player collision
-//    - IIII -> optional many-character ID for animation interpolation - objects with the same ID will be interpolated between frames.
-//    - R -> optional indicator to reset the interpolation. if an 'R' is present, the interpolation is reset which can be useful to teleport lines around.
-//    - .name -> optional human-readable name for the object
-//    - Spaces are ignored when parsing
-//    - Example: S FF0000FF B 040 80 GROUND0 .main floor
-// - Only basic paths are considered. All other objects are skipped. Bezier curves will cause a runtime error. Only straight lines. Screw you.
-// - do not use groups. At all. Under no circumstances should the input file contain any groups, ever. Groups will cause issues.
-// - The one place you may use other forms of objects are ones whose name starts with "IGNORE:".
-// This game is intended to be played at 16:9 so make sure your inkscape canvas is exactly 16 units wide and 9 units tall. In this folder is a template that you shall use.
+The only objects that are parsed by the level loader are paths and layers. Groups and all other objects are not considered. Putting paths inside groups might work as long as that group holds no transform. I don't recommend risking it until we get proper group transform support in the level parser.
+
+Objects that you do not intend to show up in the actual level must start with "IGNORE:", otherwise the parser will attempt to parse that object and fail.
+
+Objects that do show up in the level follow a specific convention:
+- T -> One of S, E, I for Solid, Evil, Ignore
+- RRGGBBAA -> 16 digit hex color code (Yes, the SVG color is fully ignored)
+- S -> one of B, G, M, L for Simple, Glowing, mBlended, gLowing&bLended
+- WWW -> width of the line in decimal half-pixels
+- PP -> Percent of the line's width to be considered a hitbox for player collision
+- IIII -> optional many-character ID for animation interpolation - objects with the same ID will be interpolated between frames.
+- R -> optional indicator to reset the interpolation. if an 'R' is present, the interpolation is reset which can be useful to teleport lines around.
+- .name -> optional human-readable name for the object
+
+So for example "S FF0000FF B 040 80 GROUND0 .main floor" is an object that:
+- has the Solid type, so the player may hold on to it
+- Color 0xFF0000FF which is pure red (RGBA)
+- type B which is basic aka solid color
+- width of 40 half pixels (20 pixels)
+- the collision for this line only goes to 80 percent of this lines width
+- animation/interpolation id GROUND0 so any other lines named GROUND0 will be this same line in a different location
+- human-readable comment "main floor"
+
+The interpolation ID is of particular importance if you do not want to redraw the entire level for every frame. Two objects with the same interpolation ID may not show up in the same frame. An object may be interpolated between frames linearly, so for example of frame 0 has an object on the left side with the id LINE0, and frame 60 has an object on the right side with the same id, the level player will automatically fill out that line for frames 1 - 59, and the line will take one second and one frame to go from the left side to the right side.
+
+Note that the last instance of an interpolation ID will persist to future frames, use the 'R' or interpolation reset flag with will remove that persistence.
 
 ## TODO
 - player movement
