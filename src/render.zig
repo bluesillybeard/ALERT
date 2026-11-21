@@ -2,7 +2,7 @@ const GL_VERSION_MAJOR = 2;
 const GL_VERSION_MINOR = 1;
 
 // It might make more sense to instead use some kind of circle mask texture but we'll see what happens
-const CAP_POINTS = 8;
+const CAP_POINTS = 4;
 
 const glfw = @import("zglfw");
 const opengl = @import("opengl");
@@ -10,6 +10,7 @@ const gl = opengl.bindings;
 
 const std = @import("std");
 
+// TODO: There is no need for this to be packed anymore (at least for now) since we have completely switched how the rendering works.
 pub const LineStyle = enum(u8) {
     solid_color = 0,
     drop_linear,
@@ -18,6 +19,7 @@ pub const LineStyle = enum(u8) {
     decay_quintic,
 };
 
+// TODO: There is no need for this to be packed anymore (at least for now) since we have completely switched how the rendering works.
 pub const Color = packed struct(u32) {
     r: u8,
     g: u8,
@@ -25,17 +27,19 @@ pub const Color = packed struct(u32) {
     a: u8 = 255,
 };
 
+// TODO: There is no need for this to be packed anymore (at least for now) since we have completely switched how the rendering works.
 pub const Pos = packed struct(u32) {
-    x: u16,
-    y: u16,
+    x: i16,
+    y: i16,
 };
 
+// TODO: There is no need for this to be packed anymore (at least for now) since we have completely switched how the rendering works.
 pub const BlendMode = enum(u8) {
     add = 0,
     mix,
 };
 
-// There is no need for this to be packed anymore (at least for now) since we have completely switched how the rendering works.
+// TODO: There is no need for this to be packed anymore (at least for now) since we have completely switched how the rendering works.
 pub const Line = packed struct(u128) {
     color: Color,
     // These are in pixel coordinates (if you have more than a 65k x 65k monitor playing this game... I'm sorry.)
@@ -49,7 +53,6 @@ pub const Line = packed struct(u128) {
     leftover: u8 = undefined,
 };
 
-// This is a one-to-one translation of the function found in the fragment shader to find line distance
 fn line_segment_distance_square(start: Pos, end: Pos, p: Pos) f32 {
     const lx0: f32 = @floatFromInt(start.x);
     const ly0: f32 = @floatFromInt(start.y);
@@ -102,9 +105,9 @@ pub const Renderer = struct {
     color_buffer_id: gl.Uint,
     distance_buffer_id: gl.Uint,
     style_buffer_id: gl.Uint,
-    index_buffer_id: gl.Uint,
+    element_buffer_id: gl.Uint,
 
-    vao_id: gl.Uint,
+    // vao_id: gl.Uint,
 
     pub fn init(this: *Renderer, allocator: std.mem.Allocator) !void {
         try glfw.init();
@@ -169,6 +172,12 @@ pub const Renderer = struct {
         const program_id = gl.createProgram();
         gl.attachShader(program_id, vertex_shader_id);
         gl.attachShader(program_id, fragment_shader_id);
+
+        gl.bindAttribLocation(program_id, 0, "pos");
+        gl.bindAttribLocation(program_id, 1, "col");
+        gl.bindAttribLocation(program_id, 2, "dis");
+        gl.bindAttribLocation(program_id, 3, "sty");
+
         gl.linkProgram(program_id);
         shader_result = gl.TRUE;
         gl.getProgramiv(program_id, gl.LINK_STATUS, &shader_result);
@@ -200,12 +209,9 @@ pub const Renderer = struct {
         gl.genBuffers(1, &style_buffer);
         gl.genBuffers(1, &index_buffer);
 
-        var vao_id: gl.Uint = 0;
-        gl.genVertexArrays(1, &vao_id);
-        gl.vertexAttribPointer(0, 2, gl.FLOAT, gl.FALSE, 2 * @sizeOf(f32), 0);
-        gl.vertexAttribPointer(1, 4, gl.UNSIGNED_BYTE, gl.TRUE, 4, 0);
-        gl.vertexAttribPointer(2, 1, gl.FLOAT, gl.FALSE, 1 * @sizeOf(f32), 0);
-        gl.vertexAttribPointer(3, 1, gl.FLOAT, gl.FALSE, 1 * @sizeOf(f32), 0);
+        // Dang vaos don't exist yet (OpenGL 2.1)
+        //var vao_id: gl.Uint = 0;
+        //gl.genVertexArrays(1, &vao_id);
 
         this.* = .{
             .window = window,
@@ -215,16 +221,19 @@ pub const Renderer = struct {
             .color_buffer_id = color_buffer,
             .distance_buffer_id = distance_buffer,
             .style_buffer_id = style_buffer,
-            .index_buffer_id = index_buffer,
-            .vao_id = vao_id,
+            .element_buffer_id = index_buffer,
+            // .vao_id = vao_id,
         };
     }
 
-    pub fn drawLine(this: *Renderer, line: Line) !void {
-        try this.lines.appendBounded(line);
+    pub fn drawLine(this: *Renderer, temp_alloc: std.mem.Allocator, line: Line) !void {
+        try this.lines.append(temp_alloc, line);
     }
 
     pub fn frame(this: *Renderer, allocator: std.mem.Allocator, temp_alloc: std.mem.Allocator) !void {
+        // This entire area is purely visual; no need for deterministic or precise behavior
+        // I do really really REALLY appreciate that in Zig you can do this, because over in C land we are stuck either manually thinking about clock cycles and FMA or just throwing -ffast-math over the whole program and hoping for the best (rarely goes well for large projects)
+        @setFloatMode(.optimized);
         _ = allocator;
         const window_size = this.window.getSize();
         const window_width: f32 = @floatFromInt(window_size[0]);
@@ -253,37 +262,125 @@ pub const Renderer = struct {
         }
 
         const num_vertices = this.lines.items.len * (CAP_POINTS * 2 + 2);
-        const num_elements = this.lines.items.len * (CAP_POINTS * 4);
+        const num_elements = this.lines.items.len * ((CAP_POINTS - 1) * 6 + 6);
 
         const pos_buffer_data = try temp_alloc.alloc(f32, num_vertices * 2);
         const color_buffer_data = try temp_alloc.alloc(u32, num_vertices);
         const distance_buffer_data = try temp_alloc.alloc(f32, num_vertices);
         const style_buffer_data = try temp_alloc.alloc(f32, num_vertices);
-        const index_buffer_data = try temp_alloc.alloc(u32, num_elements);
-        _ = pos_buffer_data;
-        _ = color_buffer_data;
-        _ = distance_buffer_data;
-        _ = style_buffer_data;
-        _ = index_buffer_data;
+        const element_buffer_data = try temp_alloc.alloc(u32, num_elements);
 
         for (this.lines.items, 0..) |line, i| {
-            const vertex_buffer_offset = i * (CAP_POINTS * 2 + 2);
-            const element_buffer_offset = i * (CAP_POINTS * 4);
+            const main_vertex_buffer_offset = i * (CAP_POINTS * 2 + 2);
+            const main_element_buffer_offset = i * ((CAP_POINTS - 1) * 6 + 6);
             // Vertex Buffer ordering:
             // x start cap points
             // start cap point
             // x end cap points
             // end cap point
-            // TODO: generate lines
-            _ = vertex_buffer_offset;
-            _ = element_buffer_offset;
-            _ = line;
+
+            // dx is reversed for a good reason, it's just how the math works out.
+            const dx: f32 = @floatFromInt(line.start.x - line.end.x);
+            const dy: f32 = @floatFromInt(line.end.y - line.start.y);
+            const len = @sqrt(dx * dx + dy * dy);
+            if (len == 0) {
+                // TODO: point line
+                continue;
+            }
+            for (0..2) |start_or_end| {
+                const vertex_buffer_offset = main_vertex_buffer_offset + start_or_end * (CAP_POINTS + 1);
+                // Really I ought to just switch this while thing to use floats, they are easier to deal with and I don't need scale-independent precision.
+                const sx: f32 = @floatFromInt(if (start_or_end == 0) line.start.x else line.end.x);
+                const sy: f32 = @floatFromInt(if (start_or_end == 0) line.start.y else line.end.y);
+                const dir_multiplier: f32 = if (start_or_end == 0) 1 else -1;
+
+                pos_buffer_data[vertex_buffer_offset * 2 + 0] = (sx * 2 / window_width) - 1;
+                pos_buffer_data[vertex_buffer_offset * 2 + 1] = -(sy * 2 / window_height) + 1;
+                color_buffer_data[vertex_buffer_offset] = @bitCast(line.color);
+                distance_buffer_data[vertex_buffer_offset] = 0.0;
+                style_buffer_data[vertex_buffer_offset] = @floatFromInt(@intFromEnum(line.style));
+
+                for (0..CAP_POINTS) |pi| {
+                    // Angle in radians around the cap, in a particular direction from the bottom cap point
+                    const angle: f32 = @as(f32, std.math.pi) * @as(f32, @floatFromInt(pi)) / @as(f32, @floatFromInt(CAP_POINTS - 1)) * dir_multiplier;
+                    const cos = @cos(angle);
+                    const sin = @sin(angle);
+                    // TODO: how does the compiler optimize this? Does it use FMA instructions or SIMD or whatever?
+                    const px = sx + line.width * (dx * sin + dy * cos) / len / 2;
+                    const py = sy + dir_multiplier * line.width * (dx * cos + dy * sin) / len / 2;
+
+                    pos_buffer_data[(vertex_buffer_offset + pi + 1) * 2 + 0] = (px * 2 / window_width) - 1;
+                    pos_buffer_data[(vertex_buffer_offset + pi + 1) * 2 + 1] = -(py * 2 / window_height) + 1;
+                    color_buffer_data[vertex_buffer_offset + pi + 1] = @bitCast(line.color);
+                    distance_buffer_data[vertex_buffer_offset + pi + 1] = 1.0;
+                    style_buffer_data[vertex_buffer_offset + pi + 1] = @floatFromInt(@intFromEnum(line.style));
+                }
+            }
+
+            // For a cap size of two, it looks like this:
+            // 1 0 2,2 0 3,3 0 4 | 6 5 7,7 5 8,8 5 9 | 1 9 6,6 4 1
+            // For the start cap, end cap, and beam respectively.
+            // To help compress the code a bit the start and end beams are done at once.
+            // Caps
+            for (0..2) |start_or_end| {
+                const element_buffer_offset = main_element_buffer_offset + start_or_end * (CAP_POINTS - 1) * 3;
+                const point_index = main_element_buffer_offset + start_or_end * (CAP_POINTS + 1);
+                for (0..(CAP_POINTS - 1)) |pi| {
+                    element_buffer_data[element_buffer_offset + pi * 3] = @intCast(point_index + pi + 1);
+                    element_buffer_data[element_buffer_offset + pi * 3 + 1] = @intCast(point_index);
+                    element_buffer_data[element_buffer_offset + pi * 3 + 2] = @intCast(point_index + pi + 2);
+                }
+            }
+
+            // Beam
+            const element_buffer_offset = main_element_buffer_offset + 2 * (CAP_POINTS - 1) * 3;
+            const start_point_index = main_element_buffer_offset;
+            const end_point_index = main_element_buffer_offset + CAP_POINTS + 1;
+            element_buffer_data[element_buffer_offset + 0] = @intCast(start_point_index + 1);
+            element_buffer_data[element_buffer_offset + 1] = @intCast(end_point_index + CAP_POINTS);
+            element_buffer_data[element_buffer_offset + 2] = @intCast(end_point_index + 1);
+            element_buffer_data[element_buffer_offset + 3] = @intCast(end_point_index + 1);
+            element_buffer_data[element_buffer_offset + 4] = @intCast(start_point_index + CAP_POINTS);
+            element_buffer_data[element_buffer_offset + 5] = @intCast(start_point_index + 1);
         }
+
+        // std.log.debug("Element buffer: {any}", .{element_buffer_data});
+
+        gl.bindBuffer(gl.ARRAY_BUFFER, this.position_buffer_id);
+        gl.bufferData(gl.ARRAY_BUFFER, @intCast(num_vertices * 2 * @sizeOf(f32)), pos_buffer_data.ptr, gl.DYNAMIC_DRAW);
+        gl.bindBuffer(gl.ARRAY_BUFFER, this.color_buffer_id);
+        gl.bufferData(gl.ARRAY_BUFFER, @intCast(num_vertices * @sizeOf(u32)), color_buffer_data.ptr, gl.DYNAMIC_DRAW);
+        gl.bindBuffer(gl.ARRAY_BUFFER, this.distance_buffer_id);
+        gl.bufferData(gl.ARRAY_BUFFER, @intCast(num_vertices * @sizeOf(f32)), distance_buffer_data.ptr, gl.DYNAMIC_DRAW);
+        gl.bindBuffer(gl.ARRAY_BUFFER, this.style_buffer_id);
+        gl.bufferData(gl.ARRAY_BUFFER, @intCast(num_vertices * @sizeOf(f32)), style_buffer_data.ptr, gl.DYNAMIC_DRAW);
+        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.element_buffer_id);
+        gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, @intCast(num_elements * @sizeOf(u32)), element_buffer_data.ptr, gl.DYNAMIC_DRAW);
 
         // Draw
         gl.clear(gl.COLOR_BUFFER_BIT);
 
-        // TODO: draw
+        gl.useProgram(this.program_id);
+
+        gl.bindBuffer(gl.ARRAY_BUFFER, this.position_buffer_id);
+        gl.enableVertexAttribArray(0);
+        gl.vertexAttribPointer(0, 2, gl.FLOAT, gl.FALSE, 2 * @sizeOf(f32), null);
+
+        gl.bindBuffer(gl.ARRAY_BUFFER, this.color_buffer_id);
+        gl.enableVertexAttribArray(1);
+        gl.vertexAttribPointer(1, 4, gl.UNSIGNED_BYTE, gl.TRUE, 4, null);
+
+        gl.bindBuffer(gl.ARRAY_BUFFER, this.distance_buffer_id);
+        gl.enableVertexAttribArray(2);
+        gl.vertexAttribPointer(2, 1, gl.FLOAT, gl.FALSE, @sizeOf(f32), null);
+
+        gl.bindBuffer(gl.ARRAY_BUFFER, this.style_buffer_id);
+        gl.enableVertexAttribArray(3);
+        gl.vertexAttribPointer(3, 1, gl.FLOAT, gl.FALSE, @sizeOf(f32), null);
+
+        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.element_buffer_id);
+        gl.drawElements(gl.TRIANGLES, @intCast(num_elements), gl.UNSIGNED_INT, null);
+
         this.window.swapBuffers();
 
         this.lines.clearRetainingCapacity();
@@ -293,7 +390,7 @@ pub const Renderer = struct {
     }
 
     pub fn deinit(this: *Renderer, allocator: std.mem.Allocator) void {
-        this.lines.deinit(allocator);
+        _ = allocator;
         glfw.destroyWindow(this.window);
         glfw.terminate();
     }

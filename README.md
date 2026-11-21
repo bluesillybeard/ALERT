@@ -43,7 +43,7 @@ So for example "S FF0000FF B 040 80 GROUND0 .main floor" is an object that:
 
 The interpolation ID is of particular importance if you do not want to redraw the entire level for every frame. Two objects with the same interpolation ID may not show up in the same frame. An object may be interpolated between frames linearly, so for example of frame 0 has an object on the left side with the id LINE0, and frame 60 has an object on the right side with the same id, the level player will automatically fill out that line for frames 1 - 59, and the line will take one second and one frame to go from the left side to the right side.
 
-Note that the last instance of an interpolation ID will persist to future frames, use the 'R' or interpolation reset flag with will remove that persistence.
+Note that the last instance of an interpolation ID will persist to future frames, use the 'R' or interpolation reset flag which will remove that persistence.
 
 ## TODO
 - player movement

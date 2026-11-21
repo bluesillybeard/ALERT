@@ -4,7 +4,7 @@ const render = @import("render.zig");
 const svgimport = @import("svgimport.zig");
 const levelplayer = @import("levelplayer.zig");
 
-const level_path = "asset/animation_tests.svg";
+const level_path = "asset/debug.svg";
 
 pub fn main(init: std.process.Init) !void {
     var renderer: render.Renderer = undefined;
@@ -49,39 +49,50 @@ pub fn main(init: std.process.Init) !void {
             num_ticks += 1;
         }
 
-        const partial = @as(f32, @floatFromInt(fstart - tick_time)) / @as(f32, @floatFromInt(fixed_step_delta));
-        const frame = try player.generateFrame(playback_frame, partial);
+        // const partial = @as(f32, @floatFromInt(fstart - tick_time)) / @as(f32, @floatFromInt(fixed_step_delta));
+        // const frame = try player.generateFrame(playback_frame, partial);
 
-        for (frame.lines) |line| {
-            var style: render.LineStyle = undefined;
-            var mode: render.BlendMode = undefined;
-            switch (line.style) {
-                .basic => {
-                    style = .solid_color;
-                    mode = .add;
-                },
-                .blended => {
-                    style = .solid_color;
-                    mode = .mix;
-                },
-                .glowing => {
-                    style = .decay_quadratic;
-                    mode = .add;
-                },
-                .both => {
-                    style = .decay_quadratic;
-                    mode = .mix;
-                },
-            }
-            try renderer.drawLine(.{
-                .color = line.color,
-                .style = style,
-                .blend_mode = mode,
-                .width = line.width,
-                .start = .{ .x = @intFromFloat(line.x0), .y = @intFromFloat(line.y0) },
-                .end = .{ .x = @intFromFloat(line.x1), .y = @intFromFloat(line.y1) },
-            });
-        }
+        // for (frame.lines) |line| {
+        //     var style: render.LineStyle = undefined;
+        //     var mode: render.BlendMode = undefined;
+        //     switch (line.style) {
+        //         .basic => {
+        //             style = .solid_color;
+        //             mode = .add;
+        //         },
+        //         .blended => {
+        //             style = .solid_color;
+        //             mode = .mix;
+        //         },
+        //         .glowing => {
+        //             style = .decay_quadratic;
+        //             mode = .add;
+        //         },
+        //         .both => {
+        //             style = .decay_quadratic;
+        //             mode = .mix;
+        //         },
+        //     }
+        //     try renderer.drawLine(frame_arena, .{
+        //         .color = line.color,
+        //         .style = style,
+        //         .blend_mode = mode,
+        //         .width = line.width,
+        //         .start = .{ .x = @intFromFloat(line.x0), .y = @intFromFloat(line.y0) },
+        //         .end = .{ .x = @intFromFloat(line.x1), .y = @intFromFloat(line.y1) },
+        //     });
+        // }
+
+        const cursor_pos = renderer.window.getCursorPos();
+        std.log.debug("Cursor: ({},{})", .{ cursor_pos[0], cursor_pos[1] });
+        try renderer.drawLine(frame_arena, .{
+            .color = .{ .r = 255, .g = 255, .b = 255, .a = 255 },
+            .style = .solid_color,
+            .blend_mode = .mix,
+            .width = 20,
+            .start = .{ .x = 0, .y = 0 },
+            .end = .{ .x = @trunc(cursor_pos[0]), .y = @trunc(cursor_pos[1]) },
+        });
 
         try renderer.frame(init.gpa, frame_arena);
 
