@@ -6,6 +6,9 @@ const levelplayer = @import("levelplayer.zig");
 
 const level_path = "asset/debug.svg";
 
+var px: i16 = 860;
+var py: i16 = 540;
+
 pub fn main(init: std.process.Init) !void {
     var renderer: render.Renderer = undefined;
     try renderer.init(init.gpa);
@@ -42,6 +45,23 @@ pub fn main(init: std.process.Init) !void {
             const frame = try player.generateFrame(playback_frame, 0);
             _ = frame;
             // TODO: this is where tick logic shall go
+
+            var mx: i16 = 0;
+            var my: i16 = 0;
+            if(renderer.window.getKey(.up) == .press) {
+                my -= 1;
+            }
+            if(renderer.window.getKey(.down) == .press) {
+                my += 1;
+            }
+            if(renderer.window.getKey(.left) == .press) {
+                mx -= 1;
+            }
+            if(renderer.window.getKey(.right) == .press) {
+                mx += 1;
+            }
+            px += mx;
+            py += my;
 
             playback_frame += 1;
             playback_frame = @mod(playback_frame, level.length);
@@ -83,15 +103,13 @@ pub fn main(init: std.process.Init) !void {
         //     });
         // }
 
-        const cursor_pos = renderer.window.getCursorPos();
-        std.log.debug("Cursor: ({},{})", .{ cursor_pos[0], cursor_pos[1] });
         try renderer.drawLine(frame_arena, .{
             .color = .{ .r = 255, .g = 255, .b = 255, .a = 255 },
             .style = .solid_color,
             .blend_mode = .mix,
-            .width = 20,
-            .start = .{ .x = 0, .y = 0 },
-            .end = .{ .x = @trunc(cursor_pos[0]), .y = @trunc(cursor_pos[1]) },
+            .width = 80,
+            .start = .{ .x = 860, .y = 540 },
+            .end = .{ .x = px, .y = py }
         });
 
         try renderer.frame(init.gpa, frame_arena);

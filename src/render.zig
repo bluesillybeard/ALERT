@@ -2,7 +2,7 @@ const GL_VERSION_MAJOR = 2;
 const GL_VERSION_MINOR = 1;
 
 // It might make more sense to instead use some kind of circle mask texture but we'll see what happens
-const CAP_POINTS = 4;
+const CAP_POINTS = 8;
 
 const glfw = @import("zglfw");
 const opengl = @import("opengl");
@@ -90,6 +90,13 @@ fn line_segment_distance_square(start: Pos, end: Pos, p: Pos) f32 {
         const dy = y - zy;
         return dx * dx + dy * dy;
     }
+}
+
+fn pixelSpaceToOpenGLNormalizedDeviceCoordinates(x: f32, y: f32, window_width: f32, window_height: f32) [2]f32 {
+    return .{
+        2 * x / window_width - 1,
+        -2 * y / window_height + 1,
+    };
 }
 
 // TODO: I don't think renderer is the right word here since it does both the window, graphics, and user-input
@@ -250,14 +257,16 @@ pub const Renderer = struct {
         const new_height = scale * 1080;
         const offset_x = (window_width - new_width) / 2;
         const offset_y = (window_height - new_height) / 2;
-        gl.viewport(@intFromFloat(offset_x), @intFromFloat(offset_y), @intFromFloat(new_width), @intFromFloat(new_height));
+        gl.viewport(0, 0, @intFromFloat(window_width), @intFromFloat(window_height));
+        gl.enable(gl.SCISSOR_TEST);
+        gl.scissor(@intFromFloat(offset_x), @intFromFloat(offset_y), @intFromFloat(new_width), @intFromFloat(new_height));
 
         // move all of the lines
         for (this.lines.items) |*line| {
-            line.start.x = @intFromFloat(line.start.x * scale + offset_x);
-            line.start.y = @intFromFloat(line.start.y * scale + offset_y);
-            line.end.x = @intFromFloat(line.end.x * scale + offset_x);
-            line.end.y = @intFromFloat(line.end.y * scale + offset_y);
+            line.start.x = @intFromFloat(line.start.x * scale);
+            line.start.y = @intFromFloat(line.start.y * scale);
+            line.end.x = @intFromFloat(line.end.x * scale);
+            line.end.y = @intFromFloat(line.end.y * scale);
             line.width = @max(@as(u8, @intFromFloat(line.width * scale)), 2);
         }
 
@@ -293,24 +302,27 @@ pub const Renderer = struct {
                 const sx: f32 = @floatFromInt(if (start_or_end == 0) line.start.x else line.end.x);
                 const sy: f32 = @floatFromInt(if (start_or_end == 0) line.start.y else line.end.y);
                 const dir_multiplier: f32 = if (start_or_end == 0) 1 else -1;
-
-                pos_buffer_data[vertex_buffer_offset * 2 + 0] = (sx * 2 / window_width) - 1;
-                pos_buffer_data[vertex_buffer_offset * 2 + 1] = -(sy * 2 / window_height) + 1;
-                color_buffer_data[vertex_buffer_offset] = @bitCast(line.color);
-                distance_buffer_data[vertex_buffer_offset] = 0.0;
-                style_buffer_data[vertex_buffer_offset] = @floatFromInt(@intFromEnum(line.style));
+                {
+                    const ndcx, const ndcy = pixelSpaceToOpenGLNormalizedDeviceCoordinates(sx, sy, window_width, window_height);
+                    pos_buffer_data[vertex_buffer_offset * 2 + 0] = ndcx;
+                    pos_buffer_data[vertex_buffer_offset * 2 + 1] = ndcy;
+                    color_buffer_data[vertex_buffer_offset] = @bitCast(line.color);
+                    distance_buffer_data[vertex_buffer_offset] = 0.0;
+                    style_buffer_data[vertex_buffer_offset] = @floatFromInt(@intFromEnum(line.style));
+                }
 
                 for (0..CAP_POINTS) |pi| {
                     // Angle in radians around the cap, in a particular direction from the bottom cap point
-                    const angle: f32 = @as(f32, std.math.pi) * @as(f32, @floatFromInt(pi)) / @as(f32, @floatFromInt(CAP_POINTS - 1)) * dir_multiplier;
+                    const angle: f32 = @as(f32, std.math.pi) * @as(f32, @floatFromInt(pi)) / @as(f32, @floatFromInt(CAP_POINTS - 1));
                     const cos = @cos(angle);
                     const sin = @sin(angle);
                     // TODO: how does the compiler optimize this? Does it use FMA instructions or SIMD or whatever?
-                    const px = sx + line.width * (dx * sin + dy * cos) / len / 2;
-                    const py = sy + dir_multiplier * line.width * (dx * cos + dy * sin) / len / 2;
-
-                    pos_buffer_data[(vertex_buffer_offset + pi + 1) * 2 + 0] = (px * 2 / window_width) - 1;
-                    pos_buffer_data[(vertex_buffer_offset + pi + 1) * 2 + 1] = -(py * 2 / window_height) + 1;
+                    const px = sx + dir_multiplier * line.width * (dx * sin - dy * cos) / len / 2;
+                    const py = sy - dir_multiplier * line.width * (dx * cos + dy * sin) / len / 2;
+                    
+                    const ndcx, const ndcy = pixelSpaceToOpenGLNormalizedDeviceCoordinates(px, py, window_width, window_height);
+                    pos_buffer_data[(vertex_buffer_offset + pi + 1) * 2 + 0] = ndcx;
+                    pos_buffer_data[(vertex_buffer_offset + pi + 1) * 2 + 1] = ndcy;
                     color_buffer_data[vertex_buffer_offset + pi + 1] = @bitCast(line.color);
                     distance_buffer_data[vertex_buffer_offset + pi + 1] = 1.0;
                     style_buffer_data[vertex_buffer_offset + pi + 1] = @floatFromInt(@intFromEnum(line.style));
