@@ -95,7 +95,7 @@ fn line_segment_distance_square(start: Pos, end: Pos, p: Pos) f32 {
 fn pixelSpaceToOpenGLNormalizedDeviceCoordinates(x: f32, y: f32, window_width: f32, window_height: f32) [2]f32 {
     return .{
         2 * x / window_width - 1,
-        -2 * y / window_height + 1,
+        2 * y / window_height - 1,
     };
 }
 
@@ -263,15 +263,15 @@ pub const Renderer = struct {
 
         // move all of the lines
         for (this.lines.items) |*line| {
-            line.start.x = @intFromFloat(line.start.x * scale);
-            line.start.y = @intFromFloat(line.start.y * scale);
-            line.end.x = @intFromFloat(line.end.x * scale);
-            line.end.y = @intFromFloat(line.end.y * scale);
+            line.start.x = @intFromFloat(line.start.x * scale + offset_x);
+            line.start.y = @intFromFloat(line.start.y * scale + offset_y);
+            line.end.x = @intFromFloat(line.end.x * scale + offset_x);
+            line.end.y = @intFromFloat(line.end.y * scale + offset_y);
             line.width = @max(@as(u8, @intFromFloat(line.width * scale)), 2);
         }
 
         const num_vertices = this.lines.items.len * (CAP_POINTS * 2 + 2);
-        const num_elements = this.lines.items.len * ((CAP_POINTS - 1) * 6 + 6);
+        const num_elements = this.lines.items.len * ((CAP_POINTS - 1) * 12 + 6);
 
         const pos_buffer_data = try temp_alloc.alloc(f32, num_vertices * 2);
         const color_buffer_data = try temp_alloc.alloc(u32, num_vertices);
@@ -281,7 +281,7 @@ pub const Renderer = struct {
 
         for (this.lines.items, 0..) |line, i| {
             const main_vertex_buffer_offset = i * (CAP_POINTS * 2 + 2);
-            const main_element_buffer_offset = i * ((CAP_POINTS - 1) * 6 + 6);
+            const main_element_buffer_offset = i * ((CAP_POINTS - 1) * 12 + 6);
             // Vertex Buffer ordering:
             // x start cap points
             // start cap point
@@ -329,11 +329,9 @@ pub const Renderer = struct {
                 }
             }
 
-            // For a cap size of two, it looks like this:
+            // For a cap size of four, it looks like this:
             // 1 0 2,2 0 3,3 0 4 | 6 5 7,7 5 8,8 5 9 | 1 9 6,6 4 1
             // For the start cap, end cap, and beam respectively.
-            // To help compress the code a bit the start and end beams are done at once.
-            // Caps
             for (0..2) |start_or_end| {
                 const element_buffer_offset = main_element_buffer_offset + start_or_end * (CAP_POINTS - 1) * 3;
                 const point_index = main_element_buffer_offset + start_or_end * (CAP_POINTS + 1);
@@ -344,7 +342,6 @@ pub const Renderer = struct {
                 }
             }
 
-            // Beam
             const element_buffer_offset = main_element_buffer_offset + 2 * (CAP_POINTS - 1) * 3;
             const start_point_index = main_element_buffer_offset;
             const end_point_index = main_element_buffer_offset + CAP_POINTS + 1;
@@ -395,7 +392,7 @@ pub const Renderer = struct {
 
         this.window.swapBuffers();
 
-        this.lines.clearRetainingCapacity();
+        this.lines.clearAndFree(temp_alloc);
 
         // TODO: Polling events should really be done per-update and not per frame
         glfw.pollEvents();
